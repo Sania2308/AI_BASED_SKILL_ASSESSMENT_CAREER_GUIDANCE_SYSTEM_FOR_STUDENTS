@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Career Guidance Dashboard</h1>
+<div class="grid three">
+<section class="card"><h3>Top Career Match</h3><div class="career-name">💼 {{careers[0]['name']}}</div><div class="match">{{careers[0]['match']}}% Match</div><div class="progress"><span style="width:{{careers[0]['match']}}%"></span></div></section>
+<section class="card"><h3>Other Career Suggestions</h3>{% for c in careers[1:] %}<div class="summary"><span>{{c['name']}}</span><b>{{c['match']}}%</b></div>{% endfor %}</section>
+<section class="card center"><h3>Career Confidence</h3><div class="confidence">{{'High' if assessment['overall'] >= 70 else 'Developing'}}</div><p class="muted">Based on your assessment and extracted skills</p></section>
+</div>
+<div class="grid two">
+<section class="card"><h3>⚠️ Skill Gap Analysis</h3><p class="muted">Suggested skills to improve</p>{% if assessment['technical'] < 70 %}<span class="gap">Technical Skills</span>{% endif %}{% if assessment['problem_solving'] < 70 %}<span class="gap">Problem Solving</span>{% endif %}{% if assessment['communication'] < 70 %}<span class="gap">Communication</span>{% endif %}{% if assessment['domain_knowledge'] < 70 %}<span class="gap">Domain Knowledge</span>{% endif %}{% if assessment['overall'] == 0 %}<span class="gap">Complete your assessment first</span>{% endif %}</section>
+<section class="card"><h3>Recommended Career Roadmap</h3><div class="road"><b>1.</b> Improve skill gaps &nbsp; → &nbsp; <b>2.</b> Learn a relevant tool &nbsp; → &nbsp; <b>3.</b> Build a project &nbsp; → &nbsp; <b>4.</b> Get certified &nbsp; → &nbsp; <b>5.</b> Apply for jobs</div></section>
+</div>
+{% endblock %}

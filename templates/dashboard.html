@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Skill Assessment & NLP Extracted Skills</h1>
+<div class="grid three">
+<section class="card center"><h3>Overall Score</h3><div class="ring">{{assessment['overall']}}%<small>{{'Good' if assessment['overall'] >= 60 else 'Keep Improving'}}</small></div></section>
+<section class="card"><h3>Domain Scores</h3>
+{% for label,key in [('Technical Skills','technical'),('Problem Solving','problem_solving'),('Communication','communication'),('Domain Knowledge','domain_knowledge')] %}
+<div class="metric"><span>{{label}}</span><b>{{assessment[key]}}%</b><i><em style="width:{{assessment[key]}}%"></em></i></div>
+{% endfor %}
+</section>
+<section class="card" id="skills"><h3>NLP Extracted Skills</h3><p class="muted">Skills identified from your resume/text</p><div class="tags">{% if skills %}{% for s in skills %}<span>{{s}}</span>{% endfor %}{% else %}<span class="empty-tag">No skills extracted yet</span>{% endif %}</div><a class="btn" href="{{url_for('assessment')}}">Add / Update Skills</a></section>
+</div>
+<div class="grid two">
+<section class="card"><h3>Assessment Summary</h3><p>Total Questions <b>10</b></p><p>Attempted <b>{{10 if assessment['overall'] else 0}}</b></p><p>Correct Answers <b>{{assessment['correct']}}</b></p><p>Score <b>{{assessment['overall']}}%</b></p><a class="btn" href="{{url_for('assessment')}}">View Detailed Report</a></section>
+<section class="card"><h3>Career Matches</h3><table><tr><th>Career</th><th>Match</th></tr>{% for c in careers %}<tr><td>{{c['name']}}</td><td>{{c['match']}}%</td></tr>{% endfor %}</table><a class="btn" href="{{url_for('career')}}">View Career Guidance</a></section>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Skill Assessment & NLP</h1>
+<section class="card" id="skills">
+<h3>1. Resume / Skills Input</h3>
+<p class="muted">Paste your own resume text or a short skills summary. SkillGuide scans this user-provided text against its skill vocabulary and saves the detected skills to your profile.</p>
+<textarea id="resume" rows="7" placeholder="Example: I know Python, SQL, Excel and Machine Learning. I have experience in Data Analysis, Power BI and Communication."></textarea>
+<div class="action-row"><button class="btn" onclick="extractSkills()">Extract Skills</button><button class="btn secondary" onclick="resetSkills()">Clear Saved Skills</button></div>
+<div id="result" class="tags mt-3">{% for s in saved_skills|default([]) %}<span>{{s}}</span>{% else %}<span class="empty-tag">No skills saved yet.</span>{% endfor %}</div>
+<div class="explain-box"><b>How is the information extracted?</b><br>This prototype uses the resume/skills text entered by the student, normalizes it, and checks it against a predefined skill vocabulary using transparent text matching. The detected skills are then saved to that student's profile.</div>
+</section>
+
+<section class="card mt-3">
+<h3>2. Technical Skill Verification</h3>
+<p class="muted">If you say that you know a technical skill, complete its skill-specific assessment. Your score determines your proficiency level and is used in Skill Swap matching.</p>
+<div class="verification-flow"><span>Skill claimed</span><b>→</b><span>Skill assessment</span><b>→</b><span>Score</span><b>→</b><span>Verified level</span></div>
+<div id="technicalSkillCards" class="technical-skill-list">
+{% for s in saved_skills %}
+<div class="skill-verification-card" data-skill="{{s}}">
+<div><b>{{s}}</b><small>{% if s in verified_skills|map(attribute='skill')|list %}Already assessed{% else %}Assessment required before Skill Swap{% endif %}</small></div>
+{% set v = verified_skills|selectattr('skill','equalto',s)|list|first %}
+{% if v %}<span class="level-pill">{{v.level}} · {{v.score}}%</span>{% endif %}
+{% if s in technical_assessment_skills %}<button class="btn" onclick="startTechnicalAssessment('{{s}}')">{% if v %}Retake Assessment{% else %}Take Assessment{% endif %}</button>{% else %}<span class="unsupported">Skill assessment coming soon</span>{% endif %}
+</div>
+{% else %}
+<div class="empty-state"><p>No technical skills detected yet.</p><small>Enter your skills above and click Extract Skills. Technical assessments are currently available for Python, SQL, Java, JavaScript and HTML.</small></div>
+{% endfor %}
+</div>
+</section>
+
+<section class="card mt-3" id="technicalAssessmentPanel" style="display:none">
+<div class="panel-header"><div><h3 id="technicalAssessmentTitle">Technical Skill Assessment</h3><p id="technicalAssessmentSubtitle" class="muted"></p></div><button class="btn secondary" onclick="closeTechnicalAssessment()">Close</button></div>
+<form id="technicalAssessmentForm"></form>
+<div class="action-row"><button class="btn" id="submitTechnicalAssessment" onclick="submitTechnicalAssessment(event)">Submit Skill Assessment</button><span id="technicalAssessmentMessage" class="success-text"></span></div>
+</section>
+
+<section class="card mt-3">
+<h3>3. Soft-Skill / Overall Assessment</h3>
+<p class="muted">This assessment measures broader areas such as problem solving, communication and domain knowledge. It is separate from the technical skill verification above.</p>
+<form id="assessmentForm">
+{% for q in questions %}
+<div class="question-card"><div class="question-title"><span>{{q.id}}</span><b>{{q.text}}</b><small>{{q.category}}</small></div><div class="options">{% for value,label in options %}<label><input type="radio" name="q{{q.id}}" value="{{value}}" required><span>{{label}}</span></label>{% endfor %}</div></div>
+{% endfor %}
+<button type="submit" class="btn">Submit Overall Assessment</button><span id="assessmentMessage" class="success-text"></span>
+</form>
+</section>
+
+<section class="grid two mt-3">
+<section class="card center"><h3>Current Score</h3><div id="liveScore" class="big">{{latest['overall']}}%</div><p class="muted">Overall assessment score</p></section>
+<section class="card"><h3>Verified Technical Skills</h3><div id="verifiedSkillsList">{% for v in verified_skills %}<div class="summary"><span>{{v.skill}}</span><b>{{v.level}} · {{v.score}}%</b></div>{% else %}<p class="muted">No technical skills verified yet.</p>{% endfor %}</div></section>
+</section>
+
+<section class="card mt-3"><h3>Latest Overall Domain Scores</h3><div id="categoryScores"><p>Technical Skills: <b>{{latest['technical']}}%</b></p><p>Problem Solving: <b>{{latest['problem_solving']}}%</b></p><p>Communication: <b>{{latest['communication']}}%</b></p><p>Domain Knowledge: <b>{{latest['domain_knowledge']}}%</b></p></div></section>
+{% endblock %}

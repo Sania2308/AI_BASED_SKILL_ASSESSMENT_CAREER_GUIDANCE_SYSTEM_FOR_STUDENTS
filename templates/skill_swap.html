@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />{% endblock %}
+{% block content %}
+<h1>Skill Swap, GIS & Blockchain</h1>
+<div class="grid swap">
+<section class="card">
+<h3>🤝 Peer-to-Peer Skill Swap</h3>
+<p class="muted">Verified Skills You Can Teach</p>
+<div class="verified-teach-list" id="teachSkills">{% for v in verified_skills %}<div class="verified-teach"><b>{{v.skill}}</b><span>{{v.level}} · {{v.score}}%</span></div>{% else %}<span class="empty-tag">Complete a technical skill assessment first.</span>{% endfor %}</div>
+<p class="muted mt-3">Skills You Want to Learn</p>
+<div class="input-row"><input id="learningInput" type="text" placeholder="e.g. Statistics, Power BI"><button class="btn" onclick="addLearningSkills()">Add Skills</button></div>
+<p class="muted small">Enter skills separated by commas. Only skills supported by the system are saved.</p>
+<div class="tags" id="learningSkills">{% for s in learning_skills %}<span>{{s}}</span>{% else %}<span class="empty-tag">No learning skills added yet.</span>{% endfor %}</div>
+<div class="action-row"><button class="btn secondary" onclick="clearLearningSkills()">Clear Learning Skills</button></div>
+<h3 class="mt-3">Top Matches</h3>
+<div id="peerMatches">{% for p in peer_matches %}<div class="peer"><b>{{p.name}}</b><strong>{{p.match}}% Match</strong><div class="peer-skills">{% for t in p.teach %}<span>{{t.skill}} · {{t.level}} · {{t.score}}%</span>{% endfor %}</div><small>Wants to learn: {{p.learn|join(', ') or 'None'}}</small><button class="connect-btn">Connect</button></div>{% else %}<div class="empty-state"><p>No peer matches yet.</p><small>Matches appear when other registered students complete technical skill assessments and have a skill you want to learn.</small></div>{% endfor %}</div>
+</section>
+<section class="card" id="map"><h3>📍 Nearby Peers (Interactive GIS Map)</h3><p class="muted">Drag the map, zoom in/out, and click a marker to view a peer. The prototype uses sample coordinates for demonstration; it does not collect your precise location.</p><div id="skillMap"></div><p class="mapnote">Map markers are demonstration locations in this 50% prototype.</p></section>
+<section class="card center" id="badge"><h3>🛡 Blockchain Verified Badge</h3><div class="badge">🏅</div><h4>Skill Swap Verification Prototype</h4><p>No completed swap is shown automatically. A verification record can be displayed after a real skill swap is completed.</p><hr><small>Blockchain verification concept</small><div class="hash">Generated after completion</div><b class="green">● Ready for integration</b></section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
+function renderTags(id, skills, empty){const el=document.getElementById(id);el.innerHTML=skills.length?skills.map(s=>`<span>${s}</span>`).join(''):`<span class="empty-tag">${empty}</span>`;}
+function renderMatches(matches){const el=document.getElementById('peerMatches');if(!matches.length){el.innerHTML='<div class="empty-state"><p>No peer matches yet.</p><small>Matches appear when other registered students complete technical skill assessments and have a skill you want to learn.</small></div>';return;}el.innerHTML=matches.map(p=>`<div class="peer"><b>${p.name}</b><strong>${p.match}% Match</strong><div class="peer-skills">${p.teach.map(t=>`<span>${t.skill} · ${t.level} · ${t.score}%</span>`).join('')}</div><small>Wants to learn: ${p.learn.length?p.learn.join(', '):'None'}</small><button class="connect-btn">Connect</button></div>`).join('');}
+async function addLearningSkills(){const input=document.getElementById('learningInput');if(!input.value.trim())return;const r=await fetch('/api/learning-skills',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skills:input.value})});const d=await r.json();if(!r.ok){alert(d.error);return;}renderTags('learningSkills',d.skills,'No learning skills added yet.');renderMatches(d.matches);input.value='';}
+async function clearLearningSkills(){const r=await fetch('/api/reset-learning-skills',{method:'POST'});const d=await r.json();renderTags('learningSkills',d.skills,'No learning skills added yet.');renderMatches([]);}
+document.addEventListener('DOMContentLoaded',()=>{const map=L.map('skillMap').setView([12.9716,77.5946],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);setTimeout(()=>map.invalidateSize(),200);});
+</script>{% endblock %}

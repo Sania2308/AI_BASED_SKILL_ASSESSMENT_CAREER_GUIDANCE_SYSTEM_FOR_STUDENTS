@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>My Profile</h1>
+<div class="grid two">
+<section class="card profile-card center">
+<div class="profile-avatar">{{user['name'][0]|upper}}</div>
+<h2>{{user['name']}}</h2><p class="muted">{{user['email']}}</p>
+<div class="profile-stat"><b>{{skills|length}}</b><span>Skills Identified</span></div>
+<div class="tags profile-tags">{% if skills %}{% for s in skills %}<span>{{s}}</span>{% endfor %}{% else %}<span>No skills yet</span>{% endif %}</div>
+</section>
+<section class="card">
+<h3>Edit Profile</h3>
+{% if message %}<div class="success-box">{{message}}</div>{% endif %}
+<form method="post">
+<label>Full Name<input class="profile-input" name="name" value="{{user['name']}}" required></label>
+<label>Email<input class="profile-input" type="email" name="email" value="{{user['email']}}" required></label>
+<label>Course<input class="profile-input" name="course" value="{{user['course']}}"></label>
+<label>Year<input class="profile-input" name="year" value="{{user['year']}}"></label>
+<label>About Me<textarea name="bio" rows="4" placeholder="Tell us about yourself">{{user['bio']}}</textarea></label>
+<button class="btn" type="submit">Save Profile</button>
+</form>
+</section>
+</div>
+{% endblock %}
