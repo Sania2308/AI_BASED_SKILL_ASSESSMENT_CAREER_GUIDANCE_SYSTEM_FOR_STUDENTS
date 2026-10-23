@@ -1,54 +1,238 @@
 {% extends 'base.html' %}
+{% block title %}Skill Assessment & NLP{% endblock %}
+
 {% block content %}
-<h1>Skill Assessment & NLP</h1>
-<section class="card" id="skills">
-<h3>1. Resume / Skills Input</h3>
-<p class="muted">Paste your own resume text or a short skills summary. SkillGuide scans this user-provided text against its skill vocabulary and saves the detected skills to your profile.</p>
-<textarea id="resume" rows="7" placeholder="Example: I know Python, SQL, Excel and Machine Learning. I have experience in Data Analysis, Power BI and Communication."></textarea>
-<div class="action-row"><button class="btn" onclick="extractSkills()">Extract Skills</button><button class="btn secondary" onclick="resetSkills()">Clear Saved Skills</button></div>
-<div id="result" class="tags mt-3">{% for s in saved_skills|default([]) %}<span>{{s}}</span>{% else %}<span class="empty-tag">No skills saved yet.</span>{% endfor %}</div>
-<div class="explain-box"><b>How is the information extracted?</b><br>This prototype uses the resume/skills text entered by the student, normalizes it, and checks it against a predefined skill vocabulary using transparent text matching. The detected skills are then saved to that student's profile.</div>
-</section>
-
-<section class="card mt-3">
-<h3>2. Technical Skill Verification</h3>
-<p class="muted">If you say that you know a technical skill, complete its skill-specific assessment. Your score determines your proficiency level and is used in Skill Swap matching.</p>
-<div class="verification-flow"><span>Skill claimed</span><b>→</b><span>Skill assessment</span><b>→</b><span>Score</span><b>→</b><span>Verified level</span></div>
-<div id="technicalSkillCards" class="technical-skill-list">
-{% for s in saved_skills %}
-<div class="skill-verification-card" data-skill="{{s}}">
-<div><b>{{s}}</b><small>{% if s in verified_skills|map(attribute='skill')|list %}Already assessed{% else %}Assessment required before Skill Swap{% endif %}</small></div>
-{% set v = verified_skills|selectattr('skill','equalto',s)|list|first %}
-{% if v %}<span class="level-pill">{{v.level}} · {{v.score}}%</span>{% endif %}
-{% if s in technical_assessment_skills %}<button class="btn" onclick="startTechnicalAssessment('{{s}}')">{% if v %}Retake Assessment{% else %}Take Assessment{% endif %}</button>{% else %}<span class="unsupported">Skill assessment coming soon</span>{% endif %}
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Skill Assessment & Technical Verification</h1>
+        <p class="page-subtitle">Extract skills from your resume, verify technical expertise, and evaluate multi-domain problem solving</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="#technicalVerificationSection" class="btn-primary-gradient">
+            <i class="bi bi-shield-check"></i> Technical Tests
+        </a>
+        <a href="#overallAssessmentSection" class="btn-secondary-outline">
+            <i class="bi bi-ui-checks"></i> 5-Domain Test
+        </a>
+    </div>
 </div>
-{% else %}
-<div class="empty-state"><p>No technical skills detected yet.</p><small>Enter your skills above and click Extract Skills. Technical assessments are currently available for Python, SQL, Java, JavaScript and HTML.</small></div>
-{% endfor %}
+
+<!-- SECTION 1: Resume Analyzer & Rule-Based NLP -->
+<div class="sg-card mb-4" id="resumeSection">
+    <div class="sg-card-header">
+        <h3 class="sg-card-title"><i class="bi bi-file-earmark-text"></i> 1. Resume Analyzer & NLP Skill Ingestion</h3>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Rule-Based NLP Engine</span>
+    </div>
+
+    <p class="text-muted small">
+        SkillGuide uses transparent, controlled-vocabulary natural language processing to ingest skills from your resume document or pasted text.
+        Upload a document (<strong>PDF, DOCX, or TXT</strong>) or paste your summary directly.
+    </p>
+
+    <div class="row g-3 mb-3">
+        <!-- File Upload Card -->
+        <div class="col-md-5">
+            <div class="p-3 border rounded-3 bg-light bg-opacity-50 h-100 d-flex flex-direction-column justify-content-between">
+                <div>
+                    <h6 class="fw-bold mb-1"><i class="bi bi-cloud-arrow-up text-primary me-2"></i>Upload Resume File</h6>
+                    <p class="text-muted small mb-3">Supports PDF, DOCX, and TXT files up to 5 MB.</p>
+                </div>
+                <div>
+                    <input type="file" id="resumeFileInput" class="form-control mb-2" accept=".pdf,.docx,.txt" onchange="handleResumeUpload(event)">
+                    <button class="btn btn-sm btn-outline-primary w-100" id="uploadResumeBtn" onclick="document.getElementById('resumeFileInput').click();">
+                        <i class="bi bi-upload me-1"></i> Choose File & Ingest
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Or Paste Text Card -->
+        <div class="col-md-7">
+            <div class="p-3 border rounded-3 bg-light bg-opacity-50">
+                <h6 class="fw-bold mb-1"><i class="bi bi-clipboard-data text-primary me-2"></i>Or Paste Resume / Skills Summary</h6>
+                <textarea id="resumeTextarea" class="form-control mb-2" rows="4" placeholder="Example: Experienced in Python, SQL, and Data Analysis with Pandas and Excel. Familiar with Machine Learning models, Git, HTML, CSS, and full stack web development using Flask..."></textarea>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-primary" id="extractSkillsBtn" onclick="extractSkills()">
+                        <i class="bi bi-cpu me-1"></i> Extract Skills via NLP
+                    </button>
+                    <button class="btn btn-sm btn-light border" onclick="resetSkills()">
+                        <i class="bi bi-trash3 me-1"></i> Clear Saved Skills
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extracted Skills Display (Categorized) -->
+    <div class="border rounded-3 p-3 bg-white mb-3" id="extractedSkillsContainer">
+        <h6 class="small fw-bold text-muted text-uppercase mb-2">Detected Skills by Engineering Category:</h6>
+        {% if categorized_extracted %}
+            {% for category, skills in categorized_extracted.items() %}
+            <div class="mb-3">
+                <span class="small fw-bold text-primary text-uppercase me-2">{{ category }}:</span>
+                <div class="d-inline-flex flex-wrap gap-1 align-items-center">
+                    {% for s in skills %}
+                    <span class="skill-tag claimed"><i class="bi bi-check-circle-fill text-primary me-1"></i>{{ s }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted small">No resume skills extracted yet. Upload a document or paste text above.</div>
+        {% endif %}
+    </div>
+
+    <!-- Academic Explainable NLP Box -->
+    <div class="p-3 bg-info-subtle border border-info-subtle rounded-3 small">
+        <strong class="text-info-emphasis"><i class="bi bi-info-circle-fill me-1"></i> How the NLP Prototype Works (Academic Viva Disclosure):</strong>
+        <p class="mb-0 text-muted mt-1">
+            SkillGuide normalizes student text into tokens, maps case-insensitive word boundaries, and matches against an academic dictionary of engineering technologies and soft skills. It operates deterministically without unexplainable black-box hallucinations.
+        </p>
+    </div>
 </div>
-</section>
 
-<section class="card mt-3" id="technicalAssessmentPanel" style="display:none">
-<div class="panel-header"><div><h3 id="technicalAssessmentTitle">Technical Skill Assessment</h3><p id="technicalAssessmentSubtitle" class="muted"></p></div><button class="btn secondary" onclick="closeTechnicalAssessment()">Close</button></div>
-<form id="technicalAssessmentForm"></form>
-<div class="action-row"><button class="btn" id="submitTechnicalAssessment" onclick="submitTechnicalAssessment(event)">Submit Skill Assessment</button><span id="technicalAssessmentMessage" class="success-text"></span></div>
-</section>
+<!-- SECTION 2: Technical Skill Verification (10 Skills) -->
+<div class="sg-card mb-4" id="technicalVerificationSection">
+    <div class="sg-card-header">
+        <div>
+            <h3 class="sg-card-title"><i class="bi bi-patch-check-fill text-primary"></i> 2. Technical Skill Verification</h3>
+            <p class="text-muted small mb-0">Complete rigorous 10-question MCQ assessments across 10 core technologies to earn verified badges.</p>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">10 Available Tests</span>
+    </div>
 
-<section class="card mt-3">
-<h3>3. Soft-Skill / Overall Assessment</h3>
-<p class="muted">This assessment measures broader areas such as problem solving, communication and domain knowledge. It is separate from the technical skill verification above.</p>
-<form id="assessmentForm">
-{% for q in questions %}
-<div class="question-card"><div class="question-title"><span>{{q.id}}</span><b>{{q.text}}</b><small>{{q.category}}</small></div><div class="options">{% for value,label in options %}<label><input type="radio" name="q{{q.id}}" value="{{value}}" required><span>{{label}}</span></label>{% endfor %}</div></div>
-{% endfor %}
-<button type="submit" class="btn">Submit Overall Assessment</button><span id="assessmentMessage" class="success-text"></span>
-</form>
-</section>
+    <!-- Verification Flow Graphic -->
+    <div class="d-flex align-items-center justify-content-center gap-3 p-3 bg-light rounded-3 mb-4 text-center small text-muted">
+        <span><i class="bi bi-tag text-primary"></i> Claimed Skill</span>
+        <i class="bi bi-arrow-right text-muted"></i>
+        <span><i class="bi bi-pencil-square text-warning"></i> 10-Question Test</span>
+        <i class="bi bi-arrow-right text-muted"></i>
+        <span><i class="bi bi-trophy text-info"></i> Score Graded</span>
+        <i class="bi bi-arrow-right text-muted"></i>
+        <span><i class="bi bi-shield-check text-success"></i> Blockchain Hash Badge</span>
+    </div>
 
-<section class="grid two mt-3">
-<section class="card center"><h3>Current Score</h3><div id="liveScore" class="big">{{latest['overall']}}%</div><p class="muted">Overall assessment score</p></section>
-<section class="card"><h3>Verified Technical Skills</h3><div id="verifiedSkillsList">{% for v in verified_skills %}<div class="summary"><span>{{v.skill}}</span><b>{{v.level}} · {{v.score}}%</b></div>{% else %}<p class="muted">No technical skills verified yet.</p>{% endfor %}</div></section>
-</section>
+    <!-- 10 Technical Skills Grid -->
+    <div class="row g-3">
+        {% for s in technical_skills %}
+        {% set v = verified_map.get(s) %}
+        <div class="col-md-6 col-lg-4">
+            <div class="p-3 border rounded-3 bg-surface h-100 d-flex flex-column justify-content-between position-relative shadow-sm">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="fs-6">{{ s }}</strong>
+                        {% if v %}
+                        <span class="badge-level {{ v.level|lower }}">{{ v.level }} &bull; {{ v.score }}%</span>
+                        {% else %}
+                        <span class="badge bg-light text-muted border">Unverified</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted small mb-3">
+                        {% if v %}
+                        Verified on {{ v.taken_at.split('T')[0] }}. Correct: {{ v.correct }}/{{ v.total }}.
+                        {% else %}
+                        10 questions assessing core syntax, algorithms, and practical usage.
+                        {% endif %}
+                    </p>
+                </div>
 
-<section class="card mt-3"><h3>Latest Overall Domain Scores</h3><div id="categoryScores"><p>Technical Skills: <b>{{latest['technical']}}%</b></p><p>Problem Solving: <b>{{latest['problem_solving']}}%</b></p><p>Communication: <b>{{latest['communication']}}%</b></p><p>Domain Knowledge: <b>{{latest['domain_knowledge']}}%</b></p></div></section>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm {{ 'btn-outline-primary' if v else 'btn-primary' }} w-100" onclick="startTechnicalAssessment('{{ s }}')">
+                        <i class="bi {{ 'bi-arrow-repeat' if v else 'bi-play-circle' }} me-1"></i>
+                        {{ 'Retake Test' if v else 'Take Assessment' }}
+                    </button>
+                    {% if v and v.verification_hash %}
+                    <a href="{{ url_for('verification.direct_verify', token=v.verification_hash) }}" class="btn btn-sm btn-light border" title="View Cryptographic Verification Certificate">
+                        <i class="bi bi-link-45deg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- SECTION 3: Overall 5-Domain Competency Assessment -->
+<div class="sg-card mb-4" id="overallAssessmentSection">
+    <div class="sg-card-header">
+        <div>
+            <h3 class="sg-card-title"><i class="bi bi-pie-chart text-primary"></i> 3. Broad 5-Domain Competency Assessment</h3>
+            <p class="text-muted small mb-0">Evaluates Technical Skills, Problem Solving, Communication, Domain Knowledge, and Learning Ability (1-5 scale).</p>
+        </div>
+        <div class="text-end">
+            <span class="small text-muted d-block">Current Score:</span>
+            <span class="fs-4 fw-bold text-primary" id="liveAssessmentScoreDisplay">{{ latest['overall'] if latest else 0 }}%</span>
+        </div>
+    </div>
+
+    <form id="broadAssessmentForm">
+        {% for q in broad_questions %}
+        <div class="question-block">
+            <div class="question-header">
+                <span class="question-badge">{{ q.id }}</span>
+                <span class="question-title-text">{{ q.text }}</span>
+                <span class="question-cat-tag">{{ q.category }}</span>
+            </div>
+            <div class="mcq-options-grid">
+                {% for val, label in rating_options %}
+                <label class="mcq-option-label">
+                    <input type="radio" name="broad_q_{{ q.id }}" value="{{ val }}" required>
+                    <span>{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn-primary-gradient px-4 py-2" id="submitBroadAssessmentBtn">
+                <i class="bi bi-check2-all me-1"></i> Submit Comprehensive Assessment
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- SECTION 4: Assessment History & Retake Audit Trail -->
+<div class="sg-card">
+    <div class="sg-card-header">
+        <h3 class="sg-card-title"><i class="bi bi-clock-history"></i> Assessment History & Retake Audit Log</h3>
+        <span class="badge bg-light text-muted border">{{ history|length }} Entries Recorded</span>
+    </div>
+
+    {% if history %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+                <tr>
+                    <th>Assessment Type</th>
+                    <th>Score (%)</th>
+                    <th>Level</th>
+                    <th>Correct Answers</th>
+                    <th>Date Attempted</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td><strong>{{ h.assessment_type }}</strong></td>
+                    <td>
+                        <span class="badge {{ 'bg-success' if h.score >= 70 else ('bg-warning text-dark' if h.score >= 40 else 'bg-secondary') }}">
+                            {{ h.score }}%
+                        </span>
+                    </td>
+                    <td>{{ h.level or 'Evaluated' }}</td>
+                    <td>{{ h.correct }} / {{ h.total }}</td>
+                    <td class="text-muted">{{ h.taken_at.replace('T', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted small">
+        No assessment attempts logged yet. Take a technical or overall test above to begin your audit trail.
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

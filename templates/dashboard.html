@@ -1,17 +1,305 @@
 {% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
 {% block content %}
-<h1>Skill Assessment & NLP Extracted Skills</h1>
-<div class="grid three">
-<section class="card center"><h3>Overall Score</h3><div class="ring">{{assessment['overall']}}%<small>{{'Good' if assessment['overall'] >= 60 else 'Keep Improving'}}</small></div></section>
-<section class="card"><h3>Domain Scores</h3>
-{% for label,key in [('Technical Skills','technical'),('Problem Solving','problem_solving'),('Communication','communication'),('Domain Knowledge','domain_knowledge')] %}
-<div class="metric"><span>{{label}}</span><b>{{assessment[key]}}%</b><i><em style="width:{{assessment[key]}}%"></em></i></div>
-{% endfor %}
-</section>
-<section class="card" id="skills"><h3>NLP Extracted Skills</h3><p class="muted">Skills identified from your resume/text</p><div class="tags">{% if skills %}{% for s in skills %}<span>{{s}}</span>{% endfor %}{% else %}<span class="empty-tag">No skills extracted yet</span>{% endif %}</div><a class="btn" href="{{url_for('assessment')}}">Add / Update Skills</a></section>
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Welcome back, {{ user['name'] }} 👋</h1>
+        <p class="page-subtitle">{{ user['course'] }} &bull; {{ user['year'] }} &bull; Personalized Career Readiness & Competency Intelligence</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('assessment.assessment_view') }}" class="btn-primary-gradient">
+            <i class="bi bi-patch-check"></i> Take Assessment
+        </a>
+        <a href="{{ url_for('report.report_view') }}" class="btn-secondary-outline">
+            <i class="bi bi-printer"></i> View Report
+        </a>
+    </div>
 </div>
-<div class="grid two">
-<section class="card"><h3>Assessment Summary</h3><p>Total Questions <b>10</b></p><p>Attempted <b>{{10 if assessment['overall'] else 0}}</b></p><p>Correct Answers <b>{{assessment['correct']}}</b></p><p>Score <b>{{assessment['overall']}}%</b></p><a class="btn" href="{{url_for('assessment')}}">View Detailed Report</a></section>
-<section class="card"><h3>Career Matches</h3><table><tr><th>Career</th><th>Match</th></tr>{% for c in careers %}<tr><td>{{c['name']}}</td><td>{{c['match']}}%</td></tr>{% endfor %}</table><a class="btn" href="{{url_for('career')}}">View Career Guidance</a></section>
+
+<!-- AI Career Insight Banner -->
+<div class="ai-insight-banner">
+    <div class="ai-sparkle-icon">
+        <i class="bi bi-stars"></i>
+    </div>
+    <div class="ai-insight-content">
+        <h4>
+            <span>AI Career Insight</span>
+            <span class="ai-tag-pill">Explainable Engine</span>
+        </h4>
+        <p>{{ ai_insight }}</p>
+    </div>
+</div>
+
+<!-- Top Metric Cards Row (8 Essential Metrics) -->
+<div class="metrics-grid-4">
+    <!-- 1. Overall Skill Score -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper indigo">
+            <i class="bi bi-speedometer2"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Overall Skill Score</span>
+            <span class="stat-data-value">{{ assessment['overall'] }}%</span>
+            <span class="stat-data-hint">{{ 'Proficient' if assessment['overall'] >= 70 else ('Intermediate' if assessment['overall'] >= 40 else 'Developing') }}</span>
+        </div>
+    </div>
+
+    <!-- 2. Top Career Match -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper purple">
+            <i class="bi bi-compass"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Top Career Match</span>
+            {% if top_career %}
+            <span class="stat-data-value fs-4 text-truncate" style="max-width: 170px;">{{ top_career['name'] }}</span>
+            <span class="stat-data-hint text-success fw-bold">{{ top_career['match'] }}% &bull; {{ top_career.get('state_label', 'Career Match') }}</span>
+            {% else %}
+            <span class="stat-data-value fs-4 text-truncate" style="max-width: 170px;">Not Available</span>
+            <span class="stat-data-hint text-muted" style="font-size: 0.72rem; line-height: 1.2;">Complete your assessment to discover your career matches.</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 3. Verified Technical Skills -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper emerald">
+            <i class="bi bi-shield-fill-check"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Verified Skills</span>
+            <span class="stat-data-value">{{ verified_skills|length }}</span>
+            <span class="stat-data-hint">Passed technical test</span>
+        </div>
+    </div>
+
+    <!-- 4. Skills Detected (NLP) -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper cyan">
+            <i class="bi bi-cpu"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Skills Detected</span>
+            <span class="stat-data-value">{{ extracted_skills|length }}</span>
+            <span class="stat-data-hint">Extracted via NLP</span>
+        </div>
+    </div>
+</div>
+
+<div class="metrics-grid-4">
+    <!-- 5. Technical Score -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper indigo">
+            <i class="bi bi-code-square"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Technical Score</span>
+            <span class="stat-data-value">{{ assessment['technical'] }}%</span>
+            <div class="progress-container mt-1" style="width: 100px;">
+                <div class="progress-fill" style="width: {{ assessment['technical'] }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Problem Solving -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper purple">
+            <i class="bi bi-puzzle"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Problem Solving</span>
+            <span class="stat-data-value">{{ assessment['problem_solving'] }}%</span>
+            <div class="progress-container mt-1" style="width: 100px;">
+                <div class="progress-fill" style="width: {{ assessment['problem_solving'] }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Communication & Domain -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper amber">
+            <i class="bi bi-chat-quote"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Communication</span>
+            <span class="stat-data-value">{{ assessment['communication'] }}%</span>
+            <div class="progress-container mt-1" style="width: 100px;">
+                <div class="progress-fill warning" style="width: {{ assessment['communication'] }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Learning Progress & Roadmap -->
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper emerald">
+            <i class="bi bi-signpost-split"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Roadmap Progress</span>
+            <span class="stat-data-value">{{ learning_progress_pct }}%</span>
+            <div class="progress-container mt-1" style="width: 100px;">
+                <div class="progress-fill success" style="width: {{ learning_progress_pct }}%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Chart.js Visualizations Grid -->
+<div class="charts-grid-2">
+    <!-- Chart 1: Radar Chart (Competency Profile) -->
+    <div class="sg-card chart-card-wrapper position-relative">
+        <div class="sg-card-header">
+            <h3 class="sg-card-title"><i class="bi bi-radar"></i> Skill Competency Profile</h3>
+            <span class="badge bg-light text-muted border">5-Domain Matrix</span>
+        </div>
+        <div style="height: 270px; position: relative;">
+            <canvas id="skillRadarChart"></canvas>
+            {% if not has_assessment %}
+            <div class="d-flex flex-column align-items-center justify-content-center text-center p-3" style="position: absolute; inset: 0; background: rgba(248, 250, 252, 0.94); border-radius: 8px; z-index: 2;">
+                <i class="bi bi-clipboard2-pulse text-muted fs-3 mb-2"></i>
+                <p class="text-muted small mb-0 fw-semibold">No assessment data yet. Complete your first assessment to generate your competency analytics.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chart 2: Bar Chart (Domain Scores vs Industry Target) -->
+    <div class="sg-card chart-card-wrapper position-relative">
+        <div class="sg-card-header">
+            <h3 class="sg-card-title"><i class="bi bi-bar-chart-line-fill"></i> Domain Scores vs Benchmark</h3>
+            <span class="badge bg-light text-muted border">Industry Standard</span>
+        </div>
+        <div style="height: 270px; position: relative;">
+            <canvas id="domainBarChart"></canvas>
+            {% if not has_assessment %}
+            <div class="d-flex flex-column align-items-center justify-content-center text-center p-3" style="position: absolute; inset: 0; background: rgba(248, 250, 252, 0.94); border-radius: 8px; z-index: 2;">
+                <i class="bi bi-bar-chart text-muted fs-3 mb-2"></i>
+                <p class="text-muted small mb-0 fw-semibold">No assessment data yet. Complete your first assessment to generate your competency analytics.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chart 3: Doughnut Chart (Career Readiness) -->
+    <div class="sg-card chart-card-wrapper position-relative">
+        <div class="sg-card-header">
+            <h3 class="sg-card-title"><i class="bi bi-pie-chart-fill"></i> Target Role Readiness</h3>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">{{ top_career['readiness'] if top_career else 'Not Available' }}</span>
+        </div>
+        <div style="height: 270px; position: relative; display: flex; align-items: center; justify-content: center;">
+            <canvas id="readinessDoughnutChart"></canvas>
+            {% if not has_assessment %}
+            <div class="d-flex flex-column align-items-center justify-content-center text-center p-3" style="position: absolute; inset: 0; background: rgba(248, 250, 252, 0.94); border-radius: 8px; z-index: 2;">
+                <i class="bi bi-pie-chart text-muted fs-3 mb-2"></i>
+                <p class="text-muted small mb-0 fw-semibold">No assessment data yet. Complete your first assessment to generate your competency analytics.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Chart 4: Line Chart (Assessment Progress Over Time) -->
+    <div class="sg-card chart-card-wrapper position-relative">
+        <div class="sg-card-header">
+            <h3 class="sg-card-title"><i class="bi bi-graph-up"></i> Assessment Progress Timeline</h3>
+            <span class="badge bg-light text-muted border">{{ assessments_completed }} Attempts Logged</span>
+        </div>
+        <div style="height: 270px; position: relative;">
+            <canvas id="progressLineChart"></canvas>
+            {% if not has_assessment %}
+            <div class="d-flex flex-column align-items-center justify-content-center text-center p-3" style="position: absolute; inset: 0; background: rgba(248, 250, 252, 0.94); border-radius: 8px; z-index: 2;">
+                <i class="bi bi-graph-up text-muted fs-3 mb-2"></i>
+                <p class="text-muted small mb-0 fw-semibold">No assessment data yet. Complete your first assessment to generate your competency analytics.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Section: Skills, Verified Badges, and Career Recommendations -->
+<div class="row g-4">
+    <!-- Left Column: Detected & Verified Skills -->
+    <div class="col-lg-6">
+        <div class="sg-card h-100">
+            <div class="sg-card-header">
+                <h3 class="sg-card-title"><i class="bi bi-cpu"></i> Identified Skills & Badges</h3>
+                <a href="{{ url_for('assessment.assessment_view') }}" class="btn btn-sm btn-outline-primary">Manage Skills</a>
+            </div>
+
+            <!-- Verified Badges -->
+            <div class="mb-4">
+                <h6 class="small fw-bold text-muted text-uppercase mb-2">Verified Technical Skills (Badges)</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for v in verified_skills %}
+                    <div class="d-inline-flex align-items-center gap-2 p-2 bg-light border rounded-3">
+                        <span class="badge bg-primary text-white"><i class="bi bi-patch-check-fill me-1"></i>{{ v.skill }}</span>
+                        <span class="badge-level {{ v.level|lower }}">{{ v.level }} &bull; {{ v.score }}%</span>
+                    </div>
+                    {% else %}
+                    <span class="text-muted small">No verified skills yet. Take a technical assessment to earn verified badges.</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Detected Skills -->
+            <div class="mb-4">
+                <h6 class="small fw-bold text-muted text-uppercase mb-2">All Detected Skills from Resume</h6>
+                <div class="skill-tags-flex">
+                    {% for s in extracted_skills %}
+                    <span class="skill-tag claimed">{{ s }}</span>
+                    {% else %}
+                    <span class="text-muted small">No skills parsed yet. Upload your resume in the Assessment tab.</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Skills to Improve -->
+            <div>
+                <h6 class="small fw-bold text-warning text-uppercase mb-2">Recommended Skills To Improve</h6>
+                <div class="skill-tags-flex">
+                    {% for imp in skills_to_improve %}
+                    <span class="skill-tag" style="background-color: var(--warning-light); border-color: rgba(245, 158, 11, 0.3); color: var(--warning);">
+                        <i class="bi bi-arrow-up-circle me-1"></i>{{ imp }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted small">Complete your resume analysis and assessment to receive personalized skill recommendations.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Top Career Matches -->
+    <div class="col-lg-6">
+        <div class="sg-card h-100">
+            <div class="sg-card-header">
+                <h3 class="sg-card-title"><i class="bi bi-compass"></i> Career Compatibility Matches</h3>
+                <a href="{{ url_for('career.career_view') }}" class="btn btn-sm btn-outline-primary">All 13 Careers</a>
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+                {% for c in career_matches %}
+                <div class="p-3 rounded-3 border bg-light bg-opacity-50">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="fs-6"><i class="bi {{ c.icon }} text-primary me-2"></i>{{ c.name }}</strong>
+                        <span class="badge bg-{{ c.readiness_badge }} fs-7">{{ c.match }}% &bull; {{ c.state_label }}</span>
+                    </div>
+                    <div class="progress-container my-2">
+                        <div class="progress-fill" style="width: {{ c.match }}%;"></div>
+                    </div>
+                    <p class="text-muted small mb-1">{{ c.description }}</p>
+                    <div class="small">
+                        <span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Matching:</span>
+                        {{ c.matching_skills[:3]|join(', ') or 'Foundational' }}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state-card py-4 text-center">
+                    <p class="text-muted mb-0">Complete your assessment to discover your career matches.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

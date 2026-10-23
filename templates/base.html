@@ -1,36 +1,268 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SkillGuide</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
-{% block head %}{% endblock %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}SkillGuide{% endblock %} - AI Career & Skill Platform</title>
+
+    <!-- Bootstrap 5.3 & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Leaflet CSS for GIS Mapping -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Core SkillGuide Custom Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    {% block head %}{% endblock %}
 </head>
 <body>
-<div class="app">
-<aside>
-<div class="brand">◉ SkillGuide</div>
-<nav>
-<a class="{{'active' if page=='dashboard' else ''}}" href="{{url_for('dashboard')}}">⌂ <span>Dashboard</span></a>
-<a class="{{'active' if page=='assessment' else ''}}" href="{{url_for('assessment')}}">✓ <span>Assessment</span></a>
-<a href="{{url_for('assessment')}}#skills">◇ <span>Skills</span></a>
-<a class="{{'active' if page=='career' else ''}}" href="{{url_for('career')}}">⌁ <span>Career</span></a>
-<a class="{{'active' if page=='skill-swap' else ''}}" href="{{url_for('skill_swap')}}">♧ <span>Skill Swap</span></a>
-<a class="{{'active' if page=='skill-swap' else ''}}" href="{{url_for('skill_swap')}}#map">⌖ <span>Map</span></a>
-<a href="{{url_for('skill_swap')}}#badge">♢ <span>Badges</span></a>
-<a class="{{'active' if page=='profile' else ''}}" href="{{url_for('profile')}}">♙ <span>Profile</span></a>
-<a href="{{url_for('logout')}}">↪ <span>Logout</span></a>
-</nav>
-<div class="points">🏆<span>Skill Points<strong>120</strong></span></div>
-</aside>
-<main>
-<header>Welcome, <b>{{user['name']}}</b> <span class="avatar">{{user['name'][0]|upper}}</span></header>
-{% block content %}{% endblock %}
-</main>
-</div>
-<script src="{{url_for('static',filename='app.js')}}"></script>
-{% block scripts %}{% endblock %}
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="appSidebar">
+            <div class="sidebar-brand">
+                <a href="{{ url_for('dashboard.dashboard_view') }}" class="brand-logo">
+                    <div class="brand-icon-box">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div class="brand-text">Skill<span>Guide</span></div>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Core Navigation</div>
+
+                <a class="nav-item {{ 'active' if page == 'dashboard' else '' }}" href="{{ url_for('dashboard.dashboard_view') }}">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a class="nav-item {{ 'active' if page == 'assessment' else '' }}" href="{{ url_for('assessment.assessment_view') }}">
+                    <i class="bi bi-patch-check-fill"></i>
+                    <span>Assessment</span>
+                </a>
+
+                <a class="nav-item" href="{{ url_for('assessment.assessment_view') }}#resumeSection">
+                    <i class="bi bi-tags-fill"></i>
+                    <span>Skills Extractor</span>
+                </a>
+
+                <a class="nav-item {{ 'active' if page == 'career' else '' }}" href="{{ url_for('career.career_view') }}">
+                    <i class="bi bi-compass-fill"></i>
+                    <span>Career Guidance</span>
+                </a>
+
+                <a class="nav-item {{ 'active' if page == 'roadmap' else '' }}" href="{{ url_for('roadmap.roadmap_view') }}">
+                    <i class="bi bi-signpost-split-fill"></i>
+                    <span>Learning Roadmap</span>
+                </a>
+
+                <div class="nav-section-title">Peer Exchange & GIS</div>
+
+                <a class="nav-item {{ 'active' if page == 'skill-swap' else '' }}" href="{{ url_for('swap.skill_swap_view') }}">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Skill Swap</span>
+                </a>
+
+                <a class="nav-item {{ 'active' if page == 'gis-map' else '' }}" href="{{ url_for('gis.gis_map_view') }}">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span>GIS Skill Map</span>
+                </a>
+
+                <a class="nav-item {{ 'active' if page == 'verification' else '' }}" href="{{ url_for('verification.verification_view') }}">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Verification Ledger</span>
+                </a>
+
+                <div class="nav-section-title">Student Growth</div>
+
+                <a class="nav-item {{ 'active' if page == 'achievements' else '' }}" href="{{ url_for('achievements.achievements_view') }}">
+                    <i class="bi bi-award-fill"></i>
+                    <span>Achievements</span>
+                </a>
+
+                <a class="nav-item {{ 'active' if page == 'reports' else '' }}" href="{{ url_for('report.report_view') }}">
+                    <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                    <span>Assessment Report</span>
+                </a>
+
+                <a class="nav-item {{ 'active' if page == 'profile' else '' }}" href="{{ url_for('profile.profile_view') }}">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Student Profile</span>
+                </a>
+
+                {% if current_user and current_user['role'] == 'admin' %}
+                <div class="nav-section-title">Administration</div>
+                <a class="nav-item {{ 'active' if page == 'admin' else '' }}" href="{{ url_for('admin.admin_view') }}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Admin Portal</span>
+                </a>
+                {% endif %}
+
+                <div class="mt-auto">
+                    <a class="nav-item text-danger" href="{{ url_for('auth.logout') }}">
+                        <i class="bi bi-box-arrow-right text-danger"></i>
+                        <span>Sign Out</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Skill Points Sidebar Widget -->
+            <div class="sidebar-points-badge">
+                <div class="points-icon">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+                <div class="points-info">
+                    <span class="points-label">Skill Points</span>
+                    <span class="points-value">{{ current_user['skill_points'] if current_user else 0 }} pts</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <div class="main-wrapper">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle navigation menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="header-search-bar">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="header-search-input" id="globalSearchInput" placeholder="Search skills, careers, peers..." onkeydown="if(event.key==='Enter') window.location.href='{{ url_for('career.career_view') }}';">
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <!-- SDG 4 Quality Education Tag -->
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle d-none d-md-inline-block px-3 py-2 rounded-pill">
+                        <i class="bi bi-book-half me-1"></i> SDG 4: Quality Education
+                    </span>
+
+                    <!-- Theme Toggle -->
+                    <button class="header-action-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                        <i class="bi bi-moon-stars-fill"></i>
+                    </button>
+
+                    <!-- Notifications Dropdown -->
+                    <div class="dropdown">
+                        <button class="header-action-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                            <i class="bi bi-bell-fill"></i>
+                            <span class="notification-dot"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="min-width: 280px; border-radius: 14px;">
+                            <li><h6 class="dropdown-header fw-bold text-uppercase small">Notifications</h6></li>
+                            <li><a class="dropdown-item py-2 rounded-2 small" href="{{ url_for('assessment.assessment_view') }}"><i class="bi bi-patch-check text-primary me-2"></i>10 Technical skill tests are now ready.</a></li>
+                            <li><a class="dropdown-item py-2 rounded-2 small" href="{{ url_for('swap.skill_swap_view') }}"><i class="bi bi-people text-success me-2"></i>New peers available for Skill Swap!</a></li>
+                            <li><a class="dropdown-item py-2 rounded-2 small" href="{{ url_for('achievements.achievements_view') }}"><i class="bi bi-award text-warning me-2"></i>Check your unlocked badges and points.</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- User Profile Avatar Pill -->
+                    {% if current_user %}
+                    <a href="{{ url_for('profile.profile_view') }}" class="user-profile-menu">
+                        <div class="user-avatar-circle">
+                            {{ current_user['name'][0]|upper }}
+                        </div>
+                        <div class="user-info-text">
+                            <span class="user-name-title">{{ current_user['name'] }}</span>
+                            <span class="user-role-subtitle">{{ current_user['role'] }}</span>
+                        </div>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn-primary-gradient py-1 px-3" style="font-size: 0.85rem;">Login</a>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="content-body">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Global Skill Swap Request Modal -->
+    <div class="modal fade" id="swapRequestModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow" style="border-radius: 20px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold">🤝 Propose Skill Swap</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Connect with <strong id="modalPeerName" class="text-primary">Peer</strong> for collaborative peer-to-peer skill learning.</p>
+                    <input type="hidden" id="modalPeerId">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Skill you want to learn from them:</label>
+                        <select class="form-select" id="modalLearnSkillSelect"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Your verified skill to teach in return:</label>
+                        <select class="form-select" id="modalTeachSkillSelect">
+                            <option value="General Guidance">General Technical Guidance & Code Review</option>
+                            <option value="Python">Python (Verified)</option>
+                            <option value="SQL">SQL (Verified)</option>
+                            <option value="JavaScript">JavaScript (Verified)</option>
+                            <option value="Java">Java (Verified)</option>
+                            <option value="HTML">HTML (Verified)</option>
+                            <option value="CSS">CSS (Verified)</option>
+                            <option value="Machine Learning">Machine Learning (Verified)</option>
+                            <option value="Data Analysis">Data Analysis (Verified)</option>
+                        </select>
+                        <small class="text-muted">Note: Only verified skills are eligible for teaching in Skill Swap.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Personal Introduction / Learning Note:</label>
+                        <textarea class="form-control" id="modalSwapNotes" rows="3" placeholder="Hi! I'd love to swap skills and collaborate on projects together..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitSwapRequestForm()">Send Exchange Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Technical Assessment Modal -->
+    <div class="modal fade" id="techAssessmentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow" style="border-radius: 20px;">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="techAssessmentModalTitle">Technical Verification Assessment</h5>
+                        <p class="text-muted small mb-0" id="techAssessmentModalSubtitle">Complete all questions to verify your technical proficiency.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="techAssessmentForm"></form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Exit</button>
+                    <button type="button" class="btn btn-primary" id="submitTechAssessmentBtn" onclick="submitTechnicalAssessmentModal()">Submit & Verify Skill</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js 4.4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom SkillGuide App Logic -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="{{ url_for('static', filename='charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='map.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>

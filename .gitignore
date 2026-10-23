@@ -1,0 +1,38 @@
+# Python and environments
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Local environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+skillguide.db
+
+# Uploads & temporary runtime files
+uploads/
+tmp/
+temp/
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# IDE and Editor folders
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.pytest_cache/

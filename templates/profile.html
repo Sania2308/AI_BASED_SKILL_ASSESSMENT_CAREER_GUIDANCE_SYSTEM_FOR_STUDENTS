@@ -1,24 +1,162 @@
 {% extends 'base.html' %}
+{% block title %}Student Profile - {{ user['name'] }}{% endblock %}
+
 {% block content %}
-<h1>My Profile</h1>
-<div class="grid two">
-<section class="card profile-card center">
-<div class="profile-avatar">{{user['name'][0]|upper}}</div>
-<h2>{{user['name']}}</h2><p class="muted">{{user['email']}}</p>
-<div class="profile-stat"><b>{{skills|length}}</b><span>Skills Identified</span></div>
-<div class="tags profile-tags">{% if skills %}{% for s in skills %}<span>{{s}}</span>{% endfor %}{% else %}<span>No skills yet</span>{% endif %}</div>
-</section>
-<section class="card">
-<h3>Edit Profile</h3>
-{% if message %}<div class="success-box">{{message}}</div>{% endif %}
-<form method="post">
-<label>Full Name<input class="profile-input" name="name" value="{{user['name']}}" required></label>
-<label>Email<input class="profile-input" type="email" name="email" value="{{user['email']}}" required></label>
-<label>Course<input class="profile-input" name="course" value="{{user['course']}}"></label>
-<label>Year<input class="profile-input" name="year" value="{{user['year']}}"></label>
-<label>About Me<textarea name="bio" rows="4" placeholder="Tell us about yourself">{{user['bio']}}</textarea></label>
-<button class="btn" type="submit">Save Profile</button>
-</form>
-</section>
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Student Profile & Academic Portfolio</h1>
+        <p class="page-subtitle">Manage your personal information, career goals, verified technical credentials, and academic background</p>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-{{ msg_type }} alert-auto-dismiss d-flex align-items-center py-2 px-3 mb-4 rounded-3 small">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    <div>{{ message }}</div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Left Column: Profile Card & Summary Metrics -->
+    <div class="col-lg-4">
+        <!-- Overview Card -->
+        <div class="sg-card text-center mb-4">
+            <div class="user-avatar-circle mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2.2rem;">
+                {{ user['name'][0]|upper }}
+            </div>
+            <h3 class="fw-bold mb-1">{{ user['name'] }}</h3>
+            <p class="text-muted small mb-2">{{ user['email'] }}</p>
+            <div class="badge bg-primary-subtle text-primary border border-primary-subtle mb-3">
+                {{ user['course'] }} &bull; {{ user['year'] }}
+            </div>
+
+            {% if user['bio'] %}
+            <p class="text-muted small p-2 bg-light rounded-3 mb-3 fst-italic">"{{ user['bio'] }}"</p>
+            {% endif %}
+
+            <div class="d-flex justify-content-around border-top pt-3 text-center">
+                <div>
+                    <strong class="d-block fs-5 text-primary">{{ user['skill_points'] or 0 }}</strong>
+                    <span class="text-muted small">Points</span>
+                </div>
+                <div>
+                    <strong class="d-block fs-5 text-success">{{ verified_skills|length }}</strong>
+                    <span class="text-muted small">Verified</span>
+                </div>
+                <div>
+                    <strong class="d-block fs-5 text-warning-emphasis">{{ achievements_summary['unlocked_count'] }}</strong>
+                    <span class="text-muted small">Badges</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Target Career Goal Card -->
+        <div class="sg-card mb-4">
+            <h6 class="fw-bold mb-2"><i class="bi bi-compass text-primary me-2"></i>Target Career Goal</h6>
+            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">{{ current_career_goal }}</span>
+                <a href="{{ url_for('career.career_view') }}" class="btn btn-sm btn-outline-primary py-0 px-2">Change</a>
+            </div>
+        </div>
+
+        <!-- Verified Badges List -->
+        <div class="sg-card">
+            <h6 class="fw-bold mb-2"><i class="bi bi-patch-check-fill text-success me-2"></i>Verified Technical Badges</h6>
+            <div class="d-flex flex-wrap gap-2">
+                {% for v in verified_skills %}
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    <i class="bi bi-shield-check me-1"></i>{{ v.skill }} ({{ v.level }})
+                </span>
+                {% else %}
+                <span class="text-muted small">No verified skills yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Edit Profile Form & Detailed Skills -->
+    <div class="col-lg-8">
+        <!-- Edit Profile Form Card -->
+        <div class="sg-card mb-4">
+            <div class="sg-card-header">
+                <h4 class="sg-card-title"><i class="bi bi-pencil-square text-primary"></i> Edit Profile Information</h4>
+                <span class="badge bg-light text-muted border">Academic Details</span>
+            </div>
+
+            <form method="post" action="{{ url_for('profile.profile_view') }}">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Full Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ user['name'] }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Email Address</label>
+                        <input type="email" name="email" class="form-control" value="{{ user['email'] }}" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Course / Degree Program</label>
+                        <input type="text" name="course" class="form-control" value="{{ user['course'] }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-muted">Year / Semester</label>
+                        <input type="text" name="year" class="form-control" value="{{ user['year'] }}">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">Target Career Goal</label>
+                    <select name="preferred_career" class="form-select">
+                        <option value="">-- Select Preferred Career Goal --</option>
+                        {% for c in all_careers %}
+                        <option value="{{ c }}" {{ 'selected' if c == current_career_goal else '' }}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">About Me / Bio</label>
+                    <textarea name="bio" class="form-control" rows="3" placeholder="Share your technical interests, capstone projects, and aspirations...">{{ user['bio'] }}</textarea>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn-primary-gradient px-4">
+                        <i class="bi bi-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Skills Overview Card -->
+        <div class="sg-card">
+            <h4 class="sg-card-title mb-3"><i class="bi bi-tags-fill text-primary"></i> Extracted & Learning Skills Portfolio</h4>
+
+            <div class="mb-3">
+                <span class="small fw-bold text-muted text-uppercase d-block mb-2">Extracted Resume Skills:</span>
+                <div class="skill-tags-flex">
+                    {% for s in extracted_skills %}
+                    <span class="skill-tag claimed">{{ s.skill }}</span>
+                    {% else %}
+                    <span class="text-muted small">No extracted skills. Upload your resume in the Assessment section.</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <span class="small fw-bold text-muted text-uppercase d-block mb-2">Active Learning Goals:</span>
+                <div class="skill-tags-flex">
+                    {% for l in learning_skills %}
+                    <span class="skill-tag" style="background: var(--warning-light); border-color: rgba(245,158,11,0.3); color: var(--warning);">
+                        {{ l }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted small">No learning goals declared. Add skills in the Skill Swap tab.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

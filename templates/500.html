@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}500 - System Error{% endblock %}
+
+{% block content %}
+<div class="empty-state-card py-5">
+    <div class="empty-icon-circle text-danger">
+        <i class="bi bi-exclamation-triangle"></i>
+    </div>
+    <h2 class="empty-state-title">Application Error</h2>
+    <p class="empty-state-desc">An unexpected internal server exception occurred while processing your request.</p>
+    {% if error %}
+    <div class="alert alert-danger d-inline-block small mb-3 p-2 font-monospace">{{ error }}</div>
+    {% endif %}
+    <div>
+        <a href="{{ url_for('dashboard.dashboard_view') }}" class="btn-primary-gradient">
+            <i class="bi bi-house-door me-1"></i> Return to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

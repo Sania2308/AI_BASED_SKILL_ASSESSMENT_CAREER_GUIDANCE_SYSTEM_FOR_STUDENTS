@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}GIS Skill Map - Campus Peer Explorer{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">GIS Skill Map (Campus Peer Explorer)</h1>
+        <p class="page-subtitle">Interactive spatial exploration of student peers, verified technical competencies, and reciprocal learning interests</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-light text-primary border" id="mapPeerCountBadge">Locating Peers...</span>
+    </div>
+</div>
+
+<!-- Privacy & Viva Disclosure Alert -->
+<div class="alert alert-info d-flex align-items-center py-2 px-3 mb-4 rounded-3 small">
+    <i class="bi bi-shield-shaded fs-5 me-2 text-info"></i>
+    <div>
+        <strong>Academic Privacy Notice:</strong> Coordinates on this Leaflet OpenStreetMap map represent safe, simulated campus quadrant clusters across the metropolitan university zone. To protect student privacy, real device GPS coordinates are never collected.
+    </div>
+</div>
+
+<!-- Filter Controls Row -->
+<div class="sg-card mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-md-5">
+            <label class="form-label small fw-bold text-muted mb-1"><i class="bi bi-funnel me-1"></i>Filter by Verified Skill:</label>
+            <select class="form-select form-select-sm" id="mapSkillFilter">
+                <option value="all">All Verified Skills (No Filter)</option>
+                {% for s in all_skills %}
+                <option value="{{ s }}">{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-5">
+            <label class="form-label small fw-bold text-muted mb-1"><i class="bi bi-award me-1"></i>Filter by Proficiency Tier:</label>
+            <select class="form-select form-select-sm" id="mapLevelFilter">
+                <option value="all">All Proficiency Levels</option>
+                {% for l in levels %}
+                <option value="{{ l }}">{{ l }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2 text-md-end mt-md-4">
+            <button class="btn btn-sm btn-primary w-100" onclick="loadPeerMarkers()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Map
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Leaflet Map Canvas Card -->
+<div class="sg-card">
+    <div class="sg-card-header">
+        <h4 class="sg-card-title"><i class="bi bi-map-fill text-primary"></i> Interactive Campus Geographic View</h4>
+        <span class="badge bg-light text-muted border">Leaflet &bull; OpenStreetMap Tile Layer</span>
+    </div>
+
+    <!-- Map Canvas Container -->
+    <div id="gisMapCanvas"></div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top small text-muted">
+        <div>
+            <i class="bi bi-cursor-fill me-1 text-primary"></i> Click any pin to inspect the student's verified skills and send an instant Skill Swap proposal.
+        </div>
+        <div>
+            Map Engine: <strong>OpenStreetMap / Leaflet 1.9.4</strong>
+        </div>
+    </div>
+</div>
+{% endblock %}

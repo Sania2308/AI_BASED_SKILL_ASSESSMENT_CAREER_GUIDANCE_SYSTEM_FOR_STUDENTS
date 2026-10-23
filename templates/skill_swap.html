@@ -1,28 +1,213 @@
 {% extends 'base.html' %}
-{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />{% endblock %}
+{% block title %}Peer-to-Peer Skill Swap{% endblock %}
+
 {% block content %}
-<h1>Skill Swap, GIS & Blockchain</h1>
-<div class="grid swap">
-<section class="card">
-<h3>🤝 Peer-to-Peer Skill Swap</h3>
-<p class="muted">Verified Skills You Can Teach</p>
-<div class="verified-teach-list" id="teachSkills">{% for v in verified_skills %}<div class="verified-teach"><b>{{v.skill}}</b><span>{{v.level}} · {{v.score}}%</span></div>{% else %}<span class="empty-tag">Complete a technical skill assessment first.</span>{% endfor %}</div>
-<p class="muted mt-3">Skills You Want to Learn</p>
-<div class="input-row"><input id="learningInput" type="text" placeholder="e.g. Statistics, Power BI"><button class="btn" onclick="addLearningSkills()">Add Skills</button></div>
-<p class="muted small">Enter skills separated by commas. Only skills supported by the system are saved.</p>
-<div class="tags" id="learningSkills">{% for s in learning_skills %}<span>{{s}}</span>{% else %}<span class="empty-tag">No learning skills added yet.</span>{% endfor %}</div>
-<div class="action-row"><button class="btn secondary" onclick="clearLearningSkills()">Clear Learning Skills</button></div>
-<h3 class="mt-3">Top Matches</h3>
-<div id="peerMatches">{% for p in peer_matches %}<div class="peer"><b>{{p.name}}</b><strong>{{p.match}}% Match</strong><div class="peer-skills">{% for t in p.teach %}<span>{{t.skill}} · {{t.level}} · {{t.score}}%</span>{% endfor %}</div><small>Wants to learn: {{p.learn|join(', ') or 'None'}}</small><button class="connect-btn">Connect</button></div>{% else %}<div class="empty-state"><p>No peer matches yet.</p><small>Matches appear when other registered students complete technical skill assessments and have a skill you want to learn.</small></div>{% endfor %}</div>
-</section>
-<section class="card" id="map"><h3>📍 Nearby Peers (Interactive GIS Map)</h3><p class="muted">Drag the map, zoom in/out, and click a marker to view a peer. The prototype uses sample coordinates for demonstration; it does not collect your precise location.</p><div id="skillMap"></div><p class="mapnote">Map markers are demonstration locations in this 50% prototype.</p></section>
-<section class="card center" id="badge"><h3>🛡 Blockchain Verified Badge</h3><div class="badge">🏅</div><h4>Skill Swap Verification Prototype</h4><p>No completed swap is shown automatically. A verification record can be displayed after a real skill swap is completed.</p><hr><small>Blockchain verification concept</small><div class="hash">Generated after completion</div><b class="green">● Ready for integration</b></section>
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Peer-to-Peer Skill Swap Platform</h1>
+        <p class="page-subtitle">Collaborative knowledge exchange. Only verified technical skills qualify to teach, ensuring verified learning quality.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('gis.gis_map_view') }}" class="btn-primary-gradient">
+            <i class="bi bi-geo-alt"></i> Open GIS Campus Map
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Left Column: I Can Teach & I Want to Learn -->
+    <div class="col-lg-5">
+        <!-- Verified Skills I Can Teach -->
+        <div class="sg-card mb-4">
+            <div class="sg-card-header">
+                <div>
+                    <h4 class="sg-card-title"><i class="bi bi-mortarboard-fill text-primary"></i> Skills You Can Teach</h4>
+                    <p class="text-muted small mb-0">Eligible to offer during peer exchange.</p>
+                </div>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Verified Only</span>
+            </div>
+
+            <div class="d-flex flex-column gap-2 mb-3">
+                {% for v in verified_teach %}
+                <div class="p-2 border rounded-2 bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="small">{{ v.skill }}</strong>
+                        <span class="text-muted small ms-1">&bull; {{ v.level }} ({{ v.score }}%)</span>
+                    </div>
+                    <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Verified</span>
+                </div>
+                {% else %}
+                <div class="p-3 text-center border rounded-2 bg-light text-muted small">
+                    <p class="mb-1">You haven't verified any technical skills yet.</p>
+                    <a href="{{ url_for('assessment.assessment_view') }}" class="btn btn-sm btn-primary">Take a Technical Test</a>
+                </div>
+                {% endfor %}
+            </div>
+            <p class="text-muted small mb-0"><i class="bi bi-shield-check text-primary me-1"></i>Quality Guarantee: Only verified skills can be taught to peers.</p>
+        </div>
+
+        <!-- Skills You Want to Learn -->
+        <div class="sg-card">
+            <div class="sg-card-header">
+                <div>
+                    <h4 class="sg-card-title"><i class="bi bi-lightbulb-fill text-warning"></i> Skills You Want to Learn</h4>
+                    <p class="text-muted small mb-0">Used to compute reciprocal peer matches.</p>
+                </div>
+                <span class="badge bg-light text-muted border">{{ learning_skills|length }} Goals</span>
+            </div>
+
+            <div class="input-group mb-2">
+                <input type="text" id="learningInput" class="form-control" placeholder="e.g. Python, SQL, Machine Learning..." onkeydown="if(event.key==='Enter') addLearningSkills();">
+                <button class="btn btn-primary" onclick="addLearningSkills()">
+                    <i class="bi bi-plus-lg"></i> Add
+                </button>
+            </div>
+            <p class="text-muted small mb-3">Enter skills separated by commas.</p>
+
+            <div class="skill-tags-flex mb-3">
+                {% for s in learning_skills %}
+                <span class="skill-tag" style="background: var(--warning-light); border-color: rgba(245,158,11,0.3); color: var(--warning);">
+                    {{ s }}
+                    <i class="bi bi-x-circle-fill ms-1 text-danger cursor-pointer" onclick="removeLearningSkill('{{ s }}')" title="Remove"></i>
+                </span>
+                {% else %}
+                <span class="text-muted small">No learning skills added yet. Add technologies you wish to learn above.</span>
+                {% endfor %}
+            </div>
+
+            {% if learning_skills %}
+            <button class="btn btn-sm btn-outline-danger" onclick="clearLearningSkills()">
+                <i class="bi bi-trash3 me-1"></i> Clear All Goals
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Reciprocal Peer Matches -->
+    <div class="col-lg-7">
+        <div class="sg-card h-100">
+            <div class="sg-card-header">
+                <div>
+                    <h4 class="sg-card-title"><i class="bi bi-people-fill text-primary"></i> Recommended Peer Matches</h4>
+                    <p class="text-muted small mb-0">Peers who have verified skills matching your learning goals.</p>
+                </div>
+                <span class="badge bg-primary">{{ peer_matches|length }} Peers Found</span>
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+                {% for p in peer_matches %}
+                {% set teach_names = p.teach_skills|map(attribute='skill')|list %}
+                <div class="p-3 border rounded-3 bg-surface shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong class="fs-6">{{ p.name }}</strong>
+                            <span class="text-muted small ms-1">&bull; {{ p.course }} ({{ p.year }})</span>
+                        </div>
+                        <span class="badge bg-success fs-7">{{ p.match }}% Compatibility</span>
+                    </div>
+
+                    <div class="mb-2">
+                        <span class="small fw-bold text-muted text-uppercase d-block mb-1">Verified Skills They Can Teach You:</span>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for t in p.teach_skills %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                <i class="bi bi-patch-check-fill me-1"></i>{{ t.skill }} ({{ t.level }} &bull; {{ t.score }}%)
+                            </span>
+                            {% else %}
+                            <span class="text-muted small">None verified yet</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="small fw-bold text-muted text-uppercase d-block mb-1">Skills They Want to Learn:</span>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for l in p.learn_skills %}
+                            <span class="badge bg-light text-dark border">{{ l }}</span>
+                            {% else %}
+                            <span class="text-muted small">None declared</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm btn-primary w-100" onclick="openSwapRequestModal({{ p.peer_id }}, '{{ p.name }}', {{ teach_names|tojson }})">
+                        <i class="bi bi-arrow-left-right me-1"></i> Request Skill Swap
+                    </button>
+                </div>
+                {% else %}
+                <div class="empty-state-card py-4">
+                    <div class="empty-icon-circle"><i class="bi bi-people"></i></div>
+                    <h5 class="empty-state-title">No Peer Matches Yet</h5>
+                    <p class="empty-state-desc">Matches appear automatically when registered students verify technical skills that align with your learning goals.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: Active Exchange Requests Workflow -->
+<div class="sg-card">
+    <div class="sg-card-header">
+        <div>
+            <h4 class="sg-card-title"><i class="bi bi-arrow-left-right text-primary"></i> Active Skill Swap Proposals</h4>
+            <p class="text-muted small mb-0">Track the lifecycle of your sent and received skill exchange proposals.</p>
+        </div>
+        <span class="badge bg-light text-muted border">{{ swap_requests|length }} Total Requests</span>
+    </div>
+
+    {% if swap_requests %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle small mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Direction</th>
+                    <th>Peer Name</th>
+                    <th>Offered Skill</th>
+                    <th>Requested Skill</th>
+                    <th>Status</th>
+                    <th>Updated At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in swap_requests %}
+                <tr>
+                    <td>
+                        {% if r.sender_id == user['id'] %}
+                        <span class="badge bg-light text-primary border"><i class="bi bi-arrow-up-right me-1"></i>Sent</span>
+                        {% else %}
+                        <span class="badge bg-light text-success border"><i class="bi bi-arrow-down-left me-1"></i>Received</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ r.receiver_name if r.sender_id == user['id'] else r.sender_name }}</strong></td>
+                    <td><span class="badge bg-primary-subtle text-primary">{{ r.teach_skill }}</span></td>
+                    <td><span class="badge bg-warning-subtle text-warning-emphasis">{{ r.learn_skill }}</span></td>
+                    <td>
+                        <span class="badge {{ 'bg-success' if r.status == 'Accepted' else ('bg-info text-white' if r.status == 'Completed' else ('bg-secondary' if r.status == 'Cancelled' else 'bg-warning text-dark')) }}">
+                            {{ r.status }}
+                        </span>
+                    </td>
+                    <td class="text-muted">{{ r.updated_at.replace('T', ' ') }}</td>
+                    <td>
+                        {% if r.status == 'Pending' and r.receiver_id == user['id'] %}
+                        <button class="btn btn-sm btn-success py-0 px-2" onclick="updateSwapRequestStatus({{ r.id }}, 'Accepted')">Accept</button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="updateSwapRequestStatus({{ r.id }}, 'Cancelled')">Decline</button>
+                        {% elif r.status == 'Accepted' %}
+                        <button class="btn btn-sm btn-info text-white py-0 px-2" onclick="updateSwapRequestStatus({{ r.id }}, 'Completed')">Mark Completed</button>
+                        {% else %}
+                        <span class="text-muted small">&bull;</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted small">
+        No active skill swap requests. Select a peer above and click "Request Skill Swap" to start an exchange!
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
-function renderTags(id, skills, empty){const el=document.getElementById(id);el.innerHTML=skills.length?skills.map(s=>`<span>${s}</span>`).join(''):`<span class="empty-tag">${empty}</span>`;}
-function renderMatches(matches){const el=document.getElementById('peerMatches');if(!matches.length){el.innerHTML='<div class="empty-state"><p>No peer matches yet.</p><small>Matches appear when other registered students complete technical skill assessments and have a skill you want to learn.</small></div>';return;}el.innerHTML=matches.map(p=>`<div class="peer"><b>${p.name}</b><strong>${p.match}% Match</strong><div class="peer-skills">${p.teach.map(t=>`<span>${t.skill} · ${t.level} · ${t.score}%</span>`).join('')}</div><small>Wants to learn: ${p.learn.length?p.learn.join(', '):'None'}</small><button class="connect-btn">Connect</button></div>`).join('');}
-async function addLearningSkills(){const input=document.getElementById('learningInput');if(!input.value.trim())return;const r=await fetch('/api/learning-skills',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skills:input.value})});const d=await r.json();if(!r.ok){alert(d.error);return;}renderTags('learningSkills',d.skills,'No learning skills added yet.');renderMatches(d.matches);input.value='';}
-async function clearLearningSkills(){const r=await fetch('/api/reset-learning-skills',{method:'POST'});const d=await r.json();renderTags('learningSkills',d.skills,'No learning skills added yet.');renderMatches([]);}
-document.addEventListener('DOMContentLoaded',()=>{const map=L.map('skillMap').setView([12.9716,77.5946],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);setTimeout(()=>map.invalidateSize(),200);});
-</script>{% endblock %}

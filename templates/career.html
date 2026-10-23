@@ -1,13 +1,215 @@
 {% extends 'base.html' %}
+{% block title %}Career Guidance & Skill Gap Analysis{% endblock %}
+
 {% block content %}
-<h1>Career Guidance Dashboard</h1>
-<div class="grid three">
-<section class="card"><h3>Top Career Match</h3><div class="career-name">💼 {{careers[0]['name']}}</div><div class="match">{{careers[0]['match']}}% Match</div><div class="progress"><span style="width:{{careers[0]['match']}}%"></span></div></section>
-<section class="card"><h3>Other Career Suggestions</h3>{% for c in careers[1:] %}<div class="summary"><span>{{c['name']}}</span><b>{{c['match']}}%</b></div>{% endfor %}</section>
-<section class="card center"><h3>Career Confidence</h3><div class="confidence">{{'High' if assessment['overall'] >= 70 else 'Developing'}}</div><p class="muted">Based on your assessment and extracted skills</p></section>
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">AI Career Recommendation & Skill Gap Analysis</h1>
+        <p class="page-subtitle">Explainable career compatibility evaluated across 13 engineering domains, verified skills, and competency scores</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('roadmap.roadmap_view', career=selected_career) }}" class="btn-primary-gradient">
+            <i class="bi bi-signpost-split"></i> View Learning Roadmap
+        </a>
+    </div>
 </div>
-<div class="grid two">
-<section class="card"><h3>⚠️ Skill Gap Analysis</h3><p class="muted">Suggested skills to improve</p>{% if assessment['technical'] < 70 %}<span class="gap">Technical Skills</span>{% endif %}{% if assessment['problem_solving'] < 70 %}<span class="gap">Problem Solving</span>{% endif %}{% if assessment['communication'] < 70 %}<span class="gap">Communication</span>{% endif %}{% if assessment['domain_knowledge'] < 70 %}<span class="gap">Domain Knowledge</span>{% endif %}{% if assessment['overall'] == 0 %}<span class="gap">Complete your assessment first</span>{% endif %}</section>
-<section class="card"><h3>Recommended Career Roadmap</h3><div class="road"><b>1.</b> Improve skill gaps &nbsp; → &nbsp; <b>2.</b> Learn a relevant tool &nbsp; → &nbsp; <b>3.</b> Build a project &nbsp; → &nbsp; <b>4.</b> Get certified &nbsp; → &nbsp; <b>5.</b> Apply for jobs</div></section>
+
+<!-- Top Match Hero Banner -->
+{% if top_career %}
+<div class="sg-card mb-4 border-primary" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(124, 58, 237, 0.03) 100%);">
+    <div class="row align-items-center g-4">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary text-white px-3 py-1 rounded-pill">{{ top_career.state_label }}</span>
+                <span class="badge bg-{{ top_career.readiness_badge }}-subtle text-{{ top_career.readiness_badge }} border border-{{ top_career.readiness_badge }}-subtle">{{ top_career.readiness }}</span>
+            </div>
+            <h2 class="display-6 fw-bold mb-2"><i class="bi {{ top_career.icon }} text-primary me-2"></i>{{ top_career.name }}</h2>
+            <p class="text-muted fs-6 mb-3">{{ top_career.description }}</p>
+
+            <div class="p-3 bg-white border rounded-3 mb-3">
+                <strong class="text-primary small d-block mb-1"><i class="bi bi-stars me-1"></i> Explainable AI Match Reasoning:</strong>
+                <p class="mb-0 text-muted small">{{ top_career.reason }}</p>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-primary" onclick="setTargetCareerGoal('{{ top_career.name }}')">
+                    <i class="bi bi-star-fill me-1"></i> Set as My Target Career Goal
+                </button>
+                <a href="{{ url_for('roadmap.roadmap_view', career=top_career.name) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-compass me-1"></i> Open {{ top_career.name }} Roadmap
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-4 text-center">
+            <div class="d-inline-flex flex-column align-items-center justify-content-center p-4 rounded-circle border shadow-sm bg-white" style="width: 170px; height: 170px;">
+                <span class="display-5 fw-bold text-primary">{{ top_career.match }}%</span>
+                <span class="text-muted small fw-semibold text-uppercase">Match Score</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="sg-card mb-4 text-center py-5">
+    <div class="d-inline-flex p-3 rounded-circle bg-light text-muted mb-2">
+        <i class="bi bi-compass fs-2 text-primary"></i>
+    </div>
+    <h4 class="fw-bold mb-1">Top Career Match: Not Available</h4>
+    <p class="text-muted small mb-3">Complete your assessment to discover your career matches.</p>
+    <a href="{{ url_for('assessment.assessment_view') }}" class="btn btn-sm btn-primary">
+        <i class="bi bi-patch-check me-1"></i> Take Skill Assessment
+    </a>
+</div>
+{% endif %}
+
+<!-- SECTION: In-Depth Skill Gap Analysis for Chosen Career -->
+<div class="sg-card mb-4" id="gapAnalysisCard">
+    <div class="sg-card-header">
+        <div>
+            <h3 class="sg-card-title"><i class="bi bi-ui-checks-grid text-primary"></i> Skill Gap Analysis: {{ selected_career }}</h3>
+            <p class="text-muted small mb-0">{{ gap_analysis['description'] }}</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label class="small text-muted fw-bold">Select Career Track:</label>
+            <select class="form-select form-select-sm" style="width: 220px;" onchange="window.location.href='/career?selected=' + encodeURIComponent(this.value);">
+                {% for cat_career in all_catalog_careers %}
+                <option value="{{ cat_career }}" {{ 'selected' if cat_career == selected_career else '' }}>{{ cat_career }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Career Readiness Bar -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="fw-semibold small">Overall Readiness for {{ selected_career }}:</span>
+            <span class="fw-bold text-primary">{{ gap_analysis['readiness_pct'] }}%</span>
+        </div>
+        <div class="progress-container" style="height: 12px;">
+            <div class="progress-fill" style="width: {{ gap_analysis['readiness_pct'] }}%;"></div>
+        </div>
+    </div>
+
+    <!-- 3-Tier Gap Analysis Columns -->
+    <div class="row g-3">
+        <!-- Tier 1: Already Have (Verified Proficient) -->
+        <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-light bg-opacity-50 h-100">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge bg-success rounded-pill p-1"><i class="bi bi-check-lg"></i></span>
+                    <strong class="fs-6 text-success">Already Have ({{ gap_analysis['already_have']|length }})</strong>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    {% for h in gap_analysis['already_have'] %}
+                    <div class="p-2 bg-white border rounded-2 small d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">{{ h.skill }}</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">{{ h.level }} ({{ h.score }}%)</span>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">No verified skills meeting the advanced threshold yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tier 2: Needs Improvement -->
+        <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-light bg-opacity-50 h-100">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge bg-warning text-dark rounded-pill p-1"><i class="bi bi-arrow-up-right"></i></span>
+                    <strong class="fs-6 text-warning-emphasis">Needs Practice ({{ gap_analysis['needs_improvement']|length }})</strong>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    {% for n in gap_analysis['needs_improvement'] %}
+                    <div class="p-2 bg-white border rounded-2 small d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">{{ n.skill }}</span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">{{ n.status }}</span>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">No intermediate or claimed unverified skills.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tier 3: Missing Essential Skills -->
+        <div class="col-md-4">
+            <div class="p-3 border rounded-3 bg-light bg-opacity-50 h-100">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge bg-danger rounded-pill p-1"><i class="bi bi-exclamation-lg"></i></span>
+                    <strong class="fs-6 text-danger">Missing Skills ({{ gap_analysis['missing']|length }})</strong>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    {% for m in gap_analysis['missing'] %}
+                    <div class="p-2 bg-white border rounded-2 small d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold text-danger">{{ m.skill }}</span>
+                        <a href="{{ url_for('roadmap.roadmap_view', career=selected_career) }}" class="badge bg-light text-primary border">Learn &bull; Roadmap</a>
+                    </div>
+                    {% else %}
+                    <p class="text-success small mb-0">Great job! All foundational skills identified for this role.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: All 13 Engineering Career Tracks -->
+<div class="sg-card">
+    <div class="sg-card-header">
+        <div>
+            <h3 class="sg-card-title"><i class="bi bi-grid-3x3-gap-fill text-primary"></i> All 13 Career Guidance Pathways</h3>
+            <p class="text-muted small mb-0">Detailed breakdown of requirements, match percentages, and explainable compatibility.</p>
+        </div>
+        <span class="badge bg-light text-muted border">13 Pathways</span>
+    </div>
+
+    <div class="row g-3">
+        {% for c in careers %}
+        <div class="col-md-6 col-lg-4">
+            <div class="p-3 border rounded-3 bg-surface h-100 d-flex flex-column justify-content-between shadow-sm">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong class="fs-6 d-block"><i class="bi {{ c.icon }} text-primary me-1"></i>{{ c.name }}</strong>
+                            <span class="badge bg-light text-muted border small">{{ c.category }}</span>
+                        </div>
+                        <span class="badge bg-{{ c.readiness_badge }} fs-7">{{ c.match }}% &bull; {{ c.state_label }}</span>
+                    </div>
+
+                    <div class="progress-container mb-2">
+                        <div class="progress-fill" style="width: {{ c.match }}%;"></div>
+                    </div>
+
+                    <p class="text-muted small mb-2" style="min-height: 40px;">{{ c.description }}</p>
+
+                    <div class="small mb-1">
+                        <span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Matching:</span>
+                        <span class="text-muted">{{ c.matching_skills[:3]|join(', ') or 'Foundational' }}</span>
+                    </div>
+                    <div class="small mb-3">
+                        <span class="text-danger fw-bold"><i class="bi bi-x-circle me-1"></i>Missing:</span>
+                        <span class="text-muted">{{ c.missing_skills[:3]|join(', ') or 'None' }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary w-100" onclick="window.location.href='/career?selected=' + encodeURIComponent('{{ c.name }}') + '#gapAnalysisCard'">
+                        Analyze Gap
+                    </button>
+                    <button class="btn btn-sm btn-primary w-100" onclick="setTargetCareerGoal('{{ c.name }}')">
+                        Set Target
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="p-4 border rounded-3 bg-light text-center">
+                <p class="text-muted mb-0">Complete your assessment to discover your career matches.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

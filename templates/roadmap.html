@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Learning Roadmap & Resources{% if target_career %} - {{ target_career }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Personalized Learning Roadmap{% if target_career %}: {{ target_career }}{% endif %}</h1>
+        <p class="page-subtitle">Interactive 8-stage career curriculum prioritized around your identified skill gaps and verified competency</p>
+    </div>
+    {% if target_career %}
+    <div class="d-flex align-items-center gap-2">
+        <label class="small text-muted fw-bold">Switch Career:</label>
+        <select class="form-select form-select-sm" style="width: 200px;" onchange="window.location.href='/roadmap?career=' + encodeURIComponent(this.value);">
+            {% for c in all_careers %}
+            <option value="{{ c }}" {{ 'selected' if c == target_career else '' }}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+</div>
+
+{% if not target_career %}
+<div class="sg-card text-center py-5 my-4">
+    <div class="d-inline-flex p-3 rounded-circle bg-light text-muted mb-3">
+        <i class="bi bi-signpost-split fs-1 text-primary"></i>
+    </div>
+    <h3 class="fw-bold mb-2">Roadmap Not Available Yet</h3>
+    <p class="text-muted fs-6 mb-4">Your personalized learning roadmap will be generated after career assessment.</p>
+    <a href="{{ url_for('assessment.assessment_view') }}" class="btn-primary-gradient px-4 py-2">
+        <i class="bi bi-patch-check me-1"></i> Start Skill Assessment
+    </a>
+</div>
+{% else %}
+<!-- Roadmap Progress Overview Card -->
+<div class="sg-card mb-4" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.04) 0%, rgba(124, 58, 237, 0.03) 100%);">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-mortarboard text-primary me-2"></i>Curriculum Completion</h4>
+            <p class="text-muted small mb-0">{{ roadmap['completed_count'] }} of {{ roadmap['total_steps'] }} milestones achieved for your target role.</p>
+        </div>
+        <div class="text-end">
+            <span class="display-6 fw-bold text-primary" id="roadmapCompletionPct">{{ roadmap['completion_pct'] }}%</span>
+        </div>
+    </div>
+    <div class="progress-container" style="height: 12px;">
+        <div class="progress-fill success" id="roadmapProgressBar" style="width: {{ roadmap['completion_pct'] }}%;"></div>
+    </div>
+</div>
+
+<!-- 8-Stage Interactive Roadmap Steps -->
+<div class="sg-card mb-4">
+    <div class="sg-card-header">
+        <h3 class="sg-card-title"><i class="bi bi-signpost-2-fill text-primary"></i> 8-Step Career Milestones</h3>
+        <span class="badge bg-light text-muted border">Dynamic Execution Track</span>
+    </div>
+
+    <div class="d-flex flex-column gap-3">
+        {% for step in roadmap['steps'] %}
+        <div class="p-3 border rounded-3 bg-surface shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-start gap-3" style="max-width: 680px;">
+                <div class="badge bg-primary text-white rounded-circle p-2 fs-6 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; flex-shrink: 0;">
+                    {{ step['step_id'] }}
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <strong class="fs-6">{{ step['title'] }}</strong>
+                        <span class="badge bg-light text-muted border small">{{ step['category'] }}</span>
+                        <span class="badge {{ 'bg-success' if step['status'] == 'Completed' else ('bg-warning text-dark' if step['status'] == 'In Progress' else 'bg-secondary') }}" id="stepBadge_{{ step['step_id'] }}">
+                            {{ step['status'] }}
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-0">{{ step['description'] }}</p>
+                </div>
+            </div>
+
+            <!-- Status Dropdown / Action Buttons -->
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-secondary {{ 'active' if step['status'] == 'Not Started' else '' }}" onclick="updateRoadmapMilestone('{{ target_career }}', {{ step['step_id'] }}, 'Not Started')">
+                    Not Started
+                </button>
+                <button class="btn btn-sm btn-outline-warning {{ 'active' if step['status'] == 'In Progress' else '' }}" onclick="updateRoadmapMilestone('{{ target_career }}', {{ step['step_id'] }}, 'In Progress')">
+                    In Progress
+                </button>
+                <button class="btn btn-sm btn-success {{ 'active' if step['status'] == 'Completed' else '' }}" onclick="updateRoadmapMilestone('{{ target_career }}', {{ step['step_id'] }}, 'Completed')">
+                    <i class="bi bi-check-lg me-1"></i> Completed
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- SECTION: Curated Learning Resources for Missing Skills -->
+<div class="sg-card">
+    <div class="sg-card-header">
+        <div>
+            <h3 class="sg-card-title"><i class="bi bi-collection-play-fill text-primary"></i> Curated Learning Resources</h3>
+            <p class="text-muted small mb-0">High-yield courses, official documentation, practice platforms, and projects tailored to your skill gaps.</p>
+        </div>
+        <span class="badge bg-light text-muted border">{{ resources|length }} Resources Available</span>
+    </div>
+
+    <div class="row g-3">
+        {% for r in resources %}
+        <div class="col-md-6 col-lg-3">
+            <div class="p-3 border rounded-3 bg-surface h-100 d-flex flex-column justify-content-between shadow-sm">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ r.skill }}</span>
+                        <span class="badge bg-light text-muted border small">{{ r.type }}</span>
+                    </div>
+                    <strong class="fs-6 d-block mb-1 text-truncate" title="{{ r.name }}">{{ r.name }}</strong>
+                    <div class="text-muted small mb-2"><i class="bi bi-building me-1"></i>{{ r.provider }}</div>
+                    <div class="badge bg-light text-secondary border small mb-3">{{ r.level }}</div>
+                </div>
+
+                <a href="{{ r.link }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Open Resource
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

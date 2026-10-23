@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Achievements & Gamification Leaderboard{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Achievements & Gamification Center</h1>
+        <p class="page-subtitle">Earn skill points, unlock credential badges, and climb the student academic leaderboard</p>
+    </div>
+</div>
+
+<!-- Student Level & Tier Progress Card -->
+<div class="sg-card mb-4" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.06) 0%, rgba(124, 58, 237, 0.04) 100%);">
+    <div class="row align-items-center g-4">
+        <div class="col-md-7">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary text-white">Tier Level {{ tier_level }}</span>
+                <span class="badge bg-light text-primary border">{{ tier_title }}</span>
+            </div>
+            <h2 class="display-6 fw-bold mb-2">{{ current_user['skill_points'] or 0 }} <span class="fs-4 text-muted">Skill Points</span></h2>
+            <p class="text-muted small mb-3">
+                Advance your tier by completing assessments (+20), verifying technical skills (+30), completing roadmap milestones (+10), and exchanging skills with peers (+40).
+            </p>
+
+            <div class="mb-2">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted">Progress to Next Tier ({{ tier_next }} pts):</span>
+                    <strong class="text-primary">{{ progress_to_next }}%</strong>
+                </div>
+                <div class="progress-container" style="height: 10px;">
+                    <div class="progress-fill" style="width: {{ progress_to_next }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5 text-center text-md-end">
+            <div class="p-3 bg-white border rounded-3 d-inline-block text-center shadow-sm" style="min-width: 200px;">
+                <div class="display-5 text-warning mb-1"><i class="bi bi-trophy-fill"></i></div>
+                <div class="fw-bold">{{ summary['unlocked_count'] }} of {{ summary['total_count'] }}</div>
+                <div class="text-muted small">Badges Unlocked</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: Badges & Achievements Catalog -->
+<div class="sg-card mb-4">
+    <div class="sg-card-header">
+        <div>
+            <h4 class="sg-card-title"><i class="bi bi-award-fill text-primary"></i> Academic Badges Catalog</h4>
+            <p class="text-muted small mb-0">Milestones recognizing technical depth, peer collaboration, and career preparation.</p>
+        </div>
+        <span class="badge bg-light text-muted border">{{ summary['completion_pct'] }}% Completed</span>
+    </div>
+
+    <div class="row g-3">
+        {% for a in summary['achievements'] %}
+        <div class="col-md-6 col-lg-4">
+            <div class="p-3 border rounded-3 h-100 d-flex gap-3 align-items-center {{ 'bg-surface shadow-sm' if a.is_unlocked else 'bg-light opacity-75' }}">
+                <div class="rounded-circle d-flex align-items-center justify-content-center {{ 'bg-primary text-white shadow-sm' if a.is_unlocked else 'bg-secondary text-white' }}" style="width: 52px; height: 52px; font-size: 1.45rem; flex-shrink: 0;">
+                    <i class="bi {{ a.icon }}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="fs-6 {{ 'text-primary' if a.is_unlocked else 'text-muted' }}">{{ a.title }}</strong>
+                        <span class="badge {{ 'bg-success' if a.is_unlocked else 'bg-secondary' }} small">+{{ a.points }} pts</span>
+                    </div>
+                    <p class="text-muted small mb-0">{{ a.description }}</p>
+                    {% if a.is_unlocked %}
+                    <span class="text-success small fw-bold mt-1 d-block"><i class="bi bi-check-circle-fill me-1"></i>Unlocked</span>
+                    {% else %}
+                    <span class="text-muted small mt-1 d-block"><i class="bi bi-lock-fill me-1"></i>Locked</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- SECTION: Campus Peer Leaderboard -->
+<div class="sg-card">
+    <div class="sg-card-header">
+        <div>
+            <h4 class="sg-card-title"><i class="bi bi-bar-chart-fill text-primary"></i> Campus Student Leaderboard</h4>
+            <p class="text-muted small mb-0">Cohort rankings based on verified competencies and platform engagement.</p>
+        </div>
+        <span class="badge bg-light text-muted border">Top Students</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle small mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 60px;">Rank</th>
+                    <th>Student Name</th>
+                    <th>Branch / Year</th>
+                    <th>Verified Skills</th>
+                    <th>Badges</th>
+                    <th>Skill Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lb in leaderboard %}
+                <tr class="{{ 'table-primary fw-bold' if lb.id == user['id'] else '' }}">
+                    <td>
+                        {% if loop.index == 1 %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-trophy-fill me-1"></i>#1</span>
+                        {% elif loop.index == 2 %}
+                        <span class="badge bg-secondary text-white"><i class="bi bi-award-fill me-1"></i>#2</span>
+                        {% elif loop.index == 3 %}
+                        <span class="badge bg-info text-white">#3</span>
+                        {% else %}
+                        <span class="text-muted ms-2">#{{ loop.index }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ lb.name }}
+                        {% if lb.id == user['id'] %}
+                        <span class="badge bg-primary text-white ms-1">You</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">{{ lb.course }} ({{ lb.year }})</td>
+                    <td><span class="badge bg-light text-primary border">{{ lb.verified_count }} Verified</span></td>
+                    <td><span class="badge bg-light text-warning-emphasis border">{{ lb.badge_count }} Badges</span></td>
+                    <td><strong class="text-primary">{{ lb.skill_points or 0 }} pts</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

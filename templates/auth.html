@@ -1,1 +1,223 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ 'Login' if mode == 'login' else 'Sign Up' }} - SkillGuide</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"></head><body class="auth-body"><div class="auth-wrapper"><div class="auth-brand"><span class="brand-icon">✥</span> SkillGuide</div><div class="auth-card"><div class="auth-logo">✥</div>{% if mode == 'login' %}<h1>Welcome Back</h1><p class="auth-subtitle">Sign in to continue your skill and career journey</p>{% else %}<h1>Create Your Account</h1><p class="auth-subtitle">Start your personalized skill assessment journey</p>{% endif %}{% if error %}<div class="auth-error">{{ error }}</div>{% endif %}<form method="post">{% if mode == 'signup' %}<label>Full Name</label><input name="name" type="text" placeholder="Enter your name" required>{% endif %}<label>Email</label><input name="email" type="email" placeholder="Enter your email" required><label>Password</label><input name="password" type="password" placeholder="Enter your password" required>{% if mode == 'signup' %}<label>Confirm Password</label><input name="confirm_password" type="password" placeholder="Confirm your password" required>{% endif %}<button class="auth-button" type="submit">{{ 'Login' if mode == 'login' else 'Create Account' }}</button></form><div class="auth-divider"><span>or</span></div>{% if mode == 'login' %}<p class="auth-switch">Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></p>{% else %}<p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>{% endif %}</div><p class="auth-footer">AI-Based Skill Assessment &amp; Career Guidance System</p></div></body></html>
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ 'Sign In' if mode == 'login' else 'Create Student Account' }} - SkillGuide</title>
+    <!-- Bootstrap 5.3 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .auth-split-wrapper {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+        .auth-hero-pane {
+            flex: 1.1;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+            color: #fff;
+            padding: 3.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-hero-pane::after {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .auth-form-pane {
+            flex: 0.9;
+            background-color: var(--bg-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+        }
+        .auth-card-inner {
+            width: 100%;
+            max-width: 440px;
+        }
+        .feature-bullet {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 1.1rem;
+            font-size: 0.95rem;
+            color: #e0e7ff;
+        }
+        .feature-icon-bullet {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #38bdf8;
+            font-size: 1.1rem;
+        }
+        @media (max-width: 992px) {
+            .auth-hero-pane { display: none; }
+            .auth-form-pane { padding: 2rem 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-split-wrapper">
+        <!-- Left Hero Pane -->
+        <div class="auth-hero-pane">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <div class="brand-icon-box">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <span class="fs-3 fw-bold text-white font-heading">Skill<span class="text-info">Guide</span></span>
+                </div>
+                <div class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-1 mb-3">
+                    <i class="bi bi-award me-1"></i> SDG 4: Quality Education Platform
+                </div>
+                <h1 class="display-6 fw-bold text-white mb-3" style="line-height: 1.2;">
+                    AI-Driven Career Clarity & Skill Verification for Students
+                </h1>
+                <p class="text-white-50 fs-6 mb-4">
+                    Empowering university students to verify technical skills, close competency gaps, unlock personalized career roadmaps, and exchange peer knowledge.
+                </p>
+
+                <div class="features-list mt-4">
+                    <div class="feature-bullet">
+                        <div class="feature-icon-bullet"><i class="bi bi-cpu"></i></div>
+                        <span><strong>NLP Skill Ingestion:</strong> Automated document text analysis across engineering domains.</span>
+                    </div>
+                    <div class="feature-bullet">
+                        <div class="feature-icon-bullet"><i class="bi bi-patch-check"></i></div>
+                        <span><strong>Technical Verification:</strong> 10 comprehensive skill assessments with proficiency tiers.</span>
+                    </div>
+                    <div class="feature-bullet">
+                        <div class="feature-icon-bullet"><i class="bi bi-compass"></i></div>
+                        <span><strong>Explainable AI Matching:</strong> 13 modern tech career paths with transparent reasoning.</span>
+                    </div>
+                    <div class="feature-bullet">
+                        <div class="feature-icon-bullet"><i class="bi bi-arrow-left-right"></i></div>
+                        <span><strong>Peer Skill Swap & GIS:</strong> Reciprocal campus exchange with Leaflet mapping.</span>
+                    </div>
+                    <div class="feature-bullet">
+                        <div class="feature-icon-bullet"><i class="bi bi-link-45deg"></i></div>
+                        <span><strong>Blockchain Prototype:</strong> Deterministic SHA-256 cryptographic verification ledger.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-top border-white border-opacity-10 text-white-50 small d-flex justify-content-between align-items-center">
+                <span>SkillGuide Academic Edition</span>
+                <span>B.Tech CSE Capstone Project</span>
+            </div>
+        </div>
+
+        <!-- Right Authentication Form Pane -->
+        <div class="auth-form-pane">
+            <div class="auth-card-inner">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex d-lg-none align-items-center gap-2 mb-3">
+                        <div class="brand-icon-box" style="width:34px; height:34px; font-size:1rem;">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <span class="fs-4 fw-bold">SkillGuide</span>
+                    </div>
+                    <h2 class="fw-bold mb-1">{{ 'Welcome Back' if mode == 'login' else 'Create Student Account' }}</h2>
+                    <p class="text-muted small">
+                        {{ 'Sign in to access your skills dashboard and personalized roadmap' if mode == 'login' else 'Get started with AI-driven skill assessment and peer swap' }}
+                    </p>
+                </div>
+
+                {% if error %}
+                <div class="alert alert-danger d-flex align-items-center py-2 px-3 mb-3 small" role="alert" style="border-radius: 10px;">
+                    <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0"></i>
+                    <div>{{ error }}</div>
+                </div>
+                {% endif %}
+
+                <form method="post" action="{{ url_for('auth.login') if mode == 'login' else url_for('auth.signup') }}">
+                    {% if mode == 'signup' %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                            <input type="text" name="name" class="form-control border-start-0 bg-light" placeholder="e.g. Alex Morgan" required value="{{ request.form.get('name', '') }}">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                            <input type="email" name="email" class="form-control border-start-0 bg-light" placeholder="student@university.edu" required value="{{ request.form.get('email', '') }}">
+                        </div>
+                    </div>
+
+                    {% if mode == 'signup' %}
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Course / Branch</label>
+                            <input type="text" name="course" class="form-control bg-light" placeholder="B.Tech CSE" value="{{ request.form.get('course', 'Computer Science') }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-muted">Year / Semester</label>
+                            <input type="text" name="year" class="form-control bg-light" placeholder="3rd Year" value="{{ request.form.get('year', '3rd Year') }}">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-shield-lock"></i></span>
+                            <input type="password" name="password" class="form-control border-start-0 bg-light" placeholder="At least 6 characters" required>
+                        </div>
+                    </div>
+
+                    {% if mode == 'signup' %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-shield-check"></i></span>
+                            <input type="password" name="confirm_password" class="form-control border-start-0 bg-light" placeholder="Re-enter password" required>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold mt-2" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border:none; border-radius: 10px;">
+                        {{ 'Sign In to Dashboard' if mode == 'login' else 'Create Account & Begin Assessment' }}
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 pt-2 border-top">
+                    {% if mode == 'login' %}
+                    <p class="small text-muted mb-0">Don't have an account yet? <a href="{{ url_for('auth.signup') }}" class="fw-bold text-primary">Sign up here</a></p>
+                    {% else %}
+                    <p class="small text-muted mb-0">Already registered? <a href="{{ url_for('auth.login') }}" class="fw-bold text-primary">Sign in here</a></p>
+                    {% endif %}
+                </div>
+
+                <!-- Demo quick-access credentials note for viva testing -->
+                <div class="mt-4 p-3 bg-light rounded-3 text-center small text-muted border">
+                    <div><strong>Academic Demo Credentials:</strong></div>
+                    <div>Student: <code>san@gmail.com</code> | Pass: <code>san123</code></div>
+                    <div>Admin: <code>admin@skillguide.edu</code> | Pass: <code>admin123</code></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

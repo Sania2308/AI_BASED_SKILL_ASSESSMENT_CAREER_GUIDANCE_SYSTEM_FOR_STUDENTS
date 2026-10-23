@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% block title %}Career Assessment Report - {{ user['name'] }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+    <div>
+        <h1 class="page-title mb-1">Career Assessment & Readiness Dossier</h1>
+        <p class="page-subtitle mb-0">Official academic evaluation report for portfolio submission and project viva</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="bi bi-printer-fill me-1"></i> Print / Save as PDF
+        </button>
+        <a href="{{ url_for('dashboard.dashboard_view') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Printable Report Dossier Card -->
+<div class="sg-card p-4 p-md-5 bg-white border" style="max-width: 960px; margin: 0 auto; box-shadow: var(--shadow-md);">
+    <!-- Document Header -->
+    <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="brand-icon-box" style="width: 32px; height: 32px; font-size: 1rem;">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+                <span class="fs-4 fw-bold">SkillGuide <span class="text-primary">Intelligence</span></span>
+            </div>
+            <div class="text-muted small">AI-Based Skill Assessment and Career Guidance System</div>
+            <div class="text-muted small">Aligned with UN SDG 4: Quality Education</div>
+        </div>
+        <div class="text-end">
+            <div class="badge bg-primary text-white mb-1">CONFIDENTIAL DOSSIER</div>
+            <div class="small text-muted">Generated: {{ generated_date }}</div>
+            <div class="small text-muted">Report ID: <code>SG-REP-{{ user['id'] }}-{{ assessment['taken_at'][:10] if assessment['taken_at'] != 'Not Attempted' else '0000' }}</code></div>
+        </div>
+    </div>
+
+    <!-- Student Profile Information Grid -->
+    <div class="row g-3 p-3 bg-light rounded-3 mb-4">
+        <div class="col-sm-6 col-md-3">
+            <span class="small text-muted d-block text-uppercase fw-bold">Student Name</span>
+            <strong class="fs-6">{{ user['name'] }}</strong>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <span class="small text-muted d-block text-uppercase fw-bold">Email Address</span>
+            <span class="small">{{ user['email'] }}</span>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <span class="small text-muted d-block text-uppercase fw-bold">Degree / Branch</span>
+            <span class="small">{{ user['course'] }} ({{ user['year'] }})</span>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <span class="small text-muted d-block text-uppercase fw-bold">Target Career Goal</span>
+            <strong class="small text-primary">{{ target_career }}</strong>
+        </div>
+    </div>
+
+    <!-- 5-Domain Competency Matrix -->
+    <div class="mb-4">
+        <h5 class="fw-bold text-uppercase small text-muted mb-3 border-bottom pb-2">1. Competency Assessment Scores</h5>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4 text-center p-3 border rounded-3 bg-light bg-opacity-50">
+                <span class="text-muted small d-block mb-1">Overall Competency Score</span>
+                <span class="display-6 fw-bold text-primary">{{ assessment['overall'] }}%</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle mt-1">Verified Tier</span>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between small">
+                        <span>Technical Skills:</span>
+                        <strong>{{ assessment['technical'] }}%</strong>
+                    </div>
+                    <div class="progress-container"><div class="progress-fill" style="width: {{ assessment['technical'] }}%;"></div></div>
+
+                    <div class="d-flex justify-content-between small">
+                        <span>Problem Solving:</span>
+                        <strong>{{ assessment['problem_solving'] }}%</strong>
+                    </div>
+                    <div class="progress-container"><div class="progress-fill" style="width: {{ assessment['problem_solving'] }}%;"></div></div>
+
+                    <div class="d-flex justify-content-between small">
+                        <span>Communication:</span>
+                        <strong>{{ assessment['communication'] }}%</strong>
+                    </div>
+                    <div class="progress-container"><div class="progress-fill warning" style="width: {{ assessment['communication'] }}%;"></div></div>
+
+                    <div class="d-flex justify-content-between small">
+                        <span>Domain Knowledge:</span>
+                        <strong>{{ assessment['domain_knowledge'] }}%</strong>
+                    </div>
+                    <div class="progress-container"><div class="progress-fill" style="width: {{ assessment['domain_knowledge'] }}%;"></div></div>
+
+                    <div class="d-flex justify-content-between small">
+                        <span>Learning Ability:</span>
+                        <strong>{{ assessment['learning_ability'] }}%</strong>
+                    </div>
+                    <div class="progress-container"><div class="progress-fill success" style="width: {{ assessment['learning_ability'] }}%;"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verified Skills & Detected Skills -->
+    <div class="mb-4">
+        <h5 class="fw-bold text-uppercase small text-muted mb-3 border-bottom pb-2">2. Technical Credentials & Ingested Skills</h5>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <strong class="small d-block mb-2">Verified Technical Tests Passed:</strong>
+                {% if verified_skills %}
+                <ul class="list-group list-group-flush small">
+                    {% for v in verified_skills %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span><i class="bi bi-patch-check-fill text-success me-1"></i>{{ v.skill }}</span>
+                        <span class="badge bg-success">{{ v.level }} &bull; {{ v.score }}%</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small">No verified skills recorded.</p>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <strong class="small d-block mb-2">NLP Extracted Skills from Resume:</strong>
+                <div class="skill-tags-flex">
+                    {% for s in extracted_skills %}
+                    <span class="skill-tag claimed">{{ s }}</span>
+                    {% else %}
+                    <span class="text-muted small">No resume skills recorded.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Career Recommendations & Readiness -->
+    <div class="mb-4">
+        <h5 class="fw-bold text-uppercase small text-muted mb-3 border-bottom pb-2">3. Career Compatibility Evaluation</h5>
+        <table class="table table-bordered small align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Career Pathway</th>
+                    <th>Match %</th>
+                    <th>Readiness Tier</th>
+                    <th>Reasoning Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in career_matches %}
+                <tr>
+                    <td><strong>{{ c.name }}</strong></td>
+                    <td><span class="badge bg-primary">{{ c.match }}% &bull; {{ c.state_label }}</span></td>
+                    <td><span class="badge bg-{{ c.readiness_badge }}">{{ c.readiness }}</span></td>
+                    <td class="text-muted">{{ c.reason }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">No career recommendations evaluated yet. Complete assessments and resume analysis to generate compatibility data.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Skill Gap Analysis for Target Career -->
+    <div class="mb-4">
+        <h5 class="fw-bold text-uppercase small text-muted mb-3 border-bottom pb-2">4. Target Role Gap Analysis{% if target_career %} ({{ target_career }}){% endif %}</h5>
+        {% if gap_data %}
+        <div class="row g-2 small">
+            <div class="col-md-4">
+                <div class="p-2 border rounded-2 bg-success-subtle">
+                    <strong class="text-success d-block mb-1">Acquired Skills:</strong>
+                    {{ gap_data['already_have']|map(attribute='skill')|list|join(', ') or 'None yet' }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-2 border rounded-2 bg-warning-subtle">
+                    <strong class="text-warning-emphasis d-block mb-1">Needs Improvement:</strong>
+                    {{ gap_data['needs_improvement']|map(attribute='skill')|list|join(', ') or 'None' }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-2 border rounded-2 bg-danger-subtle">
+                    <strong class="text-danger d-block mb-1">Missing Core Skills:</strong>
+                    {{ gap_data['missing']|map(attribute='skill')|list|join(', ') or 'All acquired' }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-muted small">Target career gap analysis will be generated after completing your skill assessment.</p>
+        {% endif %}
+    </div>
+
+    <!-- Recommended Roadmap Progress -->
+    <div class="mb-4">
+        <h5 class="fw-bold text-uppercase small text-muted mb-3 border-bottom pb-2">5. Recommended Learning Roadmap</h5>
+        {% if roadmap['steps'] %}
+        <ol class="small ps-3 mb-0">
+            {% for st in roadmap['steps'] %}
+            <li class="mb-1">
+                <strong>{{ st.title }}</strong> &bull; <span class="badge bg-light text-muted border">{{ st.status }}</span>:
+                {{ st.description }}
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="text-muted small">Your personalized learning roadmap will be generated after career assessment.</p>
+        {% endif %}
+    </div>
+
+    <!-- Document Footer & Sign-off -->
+    <div class="border-top pt-4 mt-4 d-flex justify-content-between align-items-center text-muted small">
+        <div>
+            <span>Verified by SkillGuide Academic Engine</span><br>
+            <span>SHA-256 Ledger Provenance Protocol</span>
+        </div>
+        <div class="text-end">
+            <div style="border-bottom: 1px solid #aaa; width: 160px; margin-bottom: 4px;"></div>
+            <span>Department Evaluator Signature</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

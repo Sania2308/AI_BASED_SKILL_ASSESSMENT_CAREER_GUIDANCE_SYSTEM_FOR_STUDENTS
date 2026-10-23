@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% block title %}Admin Institutional Portal{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+    <div>
+        <h1 class="page-title">Institutional Administration Portal</h1>
+        <p class="page-subtitle">Aggregated, privacy-conscious student cohort analytics and institutional academic metrics</p>
+    </div>
+    <div>
+        <span class="badge bg-primary text-white p-2">
+            <i class="bi bi-shield-lock-fill me-1"></i> Admin Privileges Active
+        </span>
+    </div>
+</div>
+
+<!-- Key Cohort Metrics Cards -->
+<div class="metrics-grid-4">
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper indigo">
+            <i class="bi bi-mortarboard"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Total Students</span>
+            <span class="stat-data-value">{{ metrics['total_students'] }}</span>
+            <span class="stat-data-hint">Active Student Accounts</span>
+        </div>
+    </div>
+
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper emerald">
+            <i class="bi bi-patch-check"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Assessments Taken</span>
+            <span class="stat-data-value">{{ metrics['total_assessments'] }}</span>
+            <span class="stat-data-hint">{{ metrics['total_technical_tests'] }} Technical Tests</span>
+        </div>
+    </div>
+
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper purple">
+            <i class="bi bi-speedometer2"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Cohort Average</span>
+            <span class="stat-data-value">{{ metrics['avg_scores']['overall'] }}%</span>
+            <span class="stat-data-hint">Overall Benchmark</span>
+        </div>
+    </div>
+
+    <div class="metric-stat-card">
+        <div class="stat-icon-wrapper amber">
+            <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <div class="stat-data-box">
+            <span class="stat-data-label">Skill Swap Exchanges</span>
+            <span class="stat-data-value">{{ metrics['total_swaps'] }}</span>
+            <span class="stat-data-hint">Peer-to-Peer Proposals</span>
+        </div>
+    </div>
+</div>
+
+<!-- Cohort Domain Averages Row -->
+<div class="sg-card mb-4">
+    <div class="sg-card-header">
+        <h4 class="sg-card-title"><i class="bi bi-bar-chart-line-fill text-primary"></i> Cohort Competency Averages across 5 Domains</h4>
+        <span class="badge bg-light text-muted border">Institutional Benchmark</span>
+    </div>
+
+    <div class="row g-3 text-center">
+        <div class="col">
+            <div class="p-3 bg-light rounded-3">
+                <span class="text-muted small d-block">Technical</span>
+                <strong class="fs-4 text-primary">{{ metrics['avg_scores']['technical'] }}%</strong>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-light rounded-3">
+                <span class="text-muted small d-block">Problem Solving</span>
+                <strong class="fs-4 text-primary">{{ metrics['avg_scores']['problem_solving'] }}%</strong>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-light rounded-3">
+                <span class="text-muted small d-block">Communication</span>
+                <strong class="fs-4 text-warning">{{ metrics['avg_scores']['communication'] }}%</strong>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-light rounded-3">
+                <span class="text-muted small d-block">Domain</span>
+                <strong class="fs-4 text-primary">{{ metrics['avg_scores']['domain_knowledge'] }}%</strong>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-light rounded-3">
+                <span class="text-muted small d-block">Learning</span>
+                <strong class="fs-4 text-success">{{ metrics['avg_scores']['learning_ability'] }}%</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Common Skills Ingested -->
+    <div class="col-lg-6">
+        <div class="sg-card h-100">
+            <div class="sg-card-header">
+                <h4 class="sg-card-title"><i class="bi bi-tags-fill text-primary"></i> Top Skills Ingested by Students</h4>
+                <span class="badge bg-light text-muted border">Resume NLP Aggregation</span>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                {% for cs in metrics['common_skills'] %}
+                <div class="p-2 border rounded-2 d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">{{ cs.skill }}</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ cs.student_count }} Students</span>
+                </div>
+                {% else %}
+                <span class="text-muted small">No skills ingested yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Verified Technical Skills Breakdown -->
+    <div class="col-lg-6">
+        <div class="sg-card h-100">
+            <div class="sg-card-header">
+                <h4 class="sg-card-title"><i class="bi bi-shield-check text-success"></i> Technical Test Completion Trends</h4>
+                <span class="badge bg-light text-muted border">Verification Stats</span>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                {% for vs in metrics['verified_stats'] %}
+                <div class="p-2 border rounded-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="small">{{ vs.skill }}</strong>
+                        <span class="text-muted small ms-1">&bull; Avg: {{ vs.avg_score }}%</span>
+                    </div>
+                    <span class="badge bg-success">{{ vs.count }} Verified</span>
+                </div>
+                {% else %}
+                <span class="text-muted small">No verified skills yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Popular Career Targets -->
+    <div class="col-lg-6">
+        <div class="sg-card h-100">
+            <div class="sg-card-header">
+                <h4 class="sg-card-title"><i class="bi bi-compass-fill text-primary"></i> Most Popular Target Career Paths</h4>
+                <span class="badge bg-light text-muted border">Student Choices</span>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                {% for pc in metrics['popular_careers'] %}
+                <div class="p-2 border rounded-2 d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">{{ pc.career }}</span>
+                    <span class="badge bg-light text-dark border">{{ pc.count }} Target Goals</span>
+                </div>
+                {% else %}
+                <span class="text-muted small">No preferred career goals selected yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Prevalent Skill Gaps in Student Roadmaps -->
+    <div class="col-lg-6">
+        <div class="sg-card h-100">
+            <div class="sg-card-header">
+                <h4 class="sg-card-title"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Prevalent Roadmap Skill Gaps</h4>
+                <span class="badge bg-light text-muted border">Curriculum Needs</span>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                {% for gt in metrics['gap_trends'] %}
+                <div class="p-2 border rounded-2 d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold text-truncate" style="max-width: 320px;" title="{{ gt.title }}">{{ gt.title }}</span>
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">{{ gt.in_progress_count }} Students In Progress</span>
+                </div>
+                {% else %}
+                <span class="text-muted small">No roadmap data recorded yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
